@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"/>
+<title>Коммерческое предложение</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --ink:#15171a;--ink-2:#2b2f36;--muted:#7a8088;--line:#e6e6e6;
+  --paper:#ffffff;--red:#e31e24;--red-dk:#b8181d;--gold:#c8a256;
+  --page-w:210mm;--page-h:297mm;--pad-x:14mm;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:#e6e6e3;color:var(--ink);}
+body{font-family:'Manrope','Helvetica Neue',Arial,sans-serif;font-size:10.5pt;line-height:1.45;-webkit-font-smoothing:antialiased;}
+.stack{display:flex;flex-direction:column;align-items:center;gap:8mm;padding:12mm 0 18mm;}
+.page{width:var(--page-w);height:var(--page-h);background:var(--paper);color:var(--ink);box-shadow:0 2px 8px rgba(0,0,0,.07),0 14px 40px rgba(0,0,0,.08);position:relative;overflow:hidden;page-break-after:always;}
+.page:last-child{page-break-after:auto;}
+
+/* Brand */
+.brand .cttexpo{display:flex;flex-direction:column;align-items:stretch;border:1px solid var(--ink);border-radius:1mm;padding:1mm 2mm;line-height:1;font-weight:800;color:var(--ink);min-width:11mm;text-align:center;margin-left:4mm;}
+.brand .cttexpo .a{font-size:7pt;letter-spacing:.04em;}
+.brand .cttexpo .b{font-size:8pt;letter-spacing:.04em;margin-top:1mm;}
+.brand .cttexpo .c{font-size:5.5pt;letter-spacing:.18em;color:var(--red);margin-top:1mm;border-top:1px solid #ddd;padding-top:.6mm;}
+.head{position:absolute;inset:0 0 auto 0;padding:10mm var(--pad-x) 0;display:flex;justify-content:space-between;align-items:center;}
+.brand{display:flex;align-items:center;gap:9px;}
+.brand .mark{width:15mm;height:15mm;border-radius:1.5mm;position:relative;flex-shrink:0;display:flex;align-items:center;justify-content:center;}
+.brand .mark img{width:100%;height:100%;object-fit:contain;display:block;}
+.brand .name{font-weight:800;font-size:18pt;letter-spacing:.02em;color:#15171a;}
+.brand .badges{display:flex;align-items:center;gap:9px;margin-left:6px;padding-left:9px;border-left:1px solid #c9c9c9;}
+.brand .badge-text{font-size:6.5pt;letter-spacing:.06em;line-height:1.22;color:var(--ink-2);text-transform:uppercase;font-weight:700;}
+.brand .badge-text span{display:block;}
+.phone-block{display:flex;align-items:center;gap:9px;}
+.phone-block .ic{width:9mm;height:9mm;border-radius:50%;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;color:var(--ink);}
+.phone-block .ic svg{width:55%;height:55%;}
+.phone-block .ph{line-height:1.1;text-align:right;}
+.phone-block .ph b{display:block;font-size:14pt;font-weight:800;letter-spacing:.01em;}
+.phone-block .ph span{display:block;font-size:6.5pt;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);margin-top:2px;}
+
+/* Body */
+.body{position:absolute;inset:28mm var(--pad-x) 14mm;display:flex;flex-direction:column;overflow:hidden;}
+.eyebrow{font-size:11pt;font-weight:600;color:var(--ink);}
+.h1{font-size:22pt;font-weight:800;line-height:1.1;letter-spacing:-.005em;text-transform:uppercase;}
+.lede{font-size:11pt;line-height:1.55;color:var(--ink-2);max-width:160mm;}
+.lede+.lede{margin-top:3mm;}
+.sig{font-style:italic;line-height:1.5;color:var(--ink-2);font-size:10.5pt;}
+.sig b{font-weight:600;font-style:italic;color:var(--ink);}
+hr.rule{height:1px;background:var(--line);border:0;margin:0;}
+
+/* Slot placeholders */
+.slot{position:relative;background:repeating-linear-gradient(135deg,#f1f1ef 0 6px,#e7e7e4 6px 12px);border:1px dashed #c4c4c0;color:#7a7a76;display:flex;align-items:center;justify-content:center;text-align:center;font-size:8.5pt;letter-spacing:.04em;}
+
+/* Page 1 */
+.p1-meta{display:flex;align-items:center;gap:10px;color:var(--ink-2);font-size:10.5pt;margin-top:4mm;}
+.p1-meta svg{width:14px;height:14px;}
+.p1-title{margin-top:8mm;}
+.p1-title .eyebrow{font-size:22pt;font-weight:800;text-transform:uppercase;letter-spacing:.005em;line-height:1.05;}
+.p1-stamp{margin-top:6mm;font-size:14pt;font-weight:700;text-transform:uppercase;letter-spacing:.05em;}
+.p1-text{margin-top:8mm;}
+.p1-sig{margin-top:9mm;}
+.why{position:absolute;left:var(--pad-x);right:var(--pad-x);bottom:14mm;background:var(--red);color:#fff;padding:9mm 10mm 10mm;border-radius:2mm;overflow:hidden;}
+.why::after{content:"";position:absolute;right:-30mm;top:-30mm;width:90mm;height:90mm;background:conic-gradient(from 200deg,rgba(255,255,255,.08) 0deg,transparent 90deg);transform:rotate(15deg);pointer-events:none;}
+.why h3{margin:0 0 6mm;font-size:11pt;font-weight:700;letter-spacing:.1em;text-transform:uppercase;}
+.why-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6mm;position:relative;z-index:1;}
+.why .stat{display:flex;flex-direction:column;}
+.why .num{font-size:32pt;font-weight:800;line-height:1;letter-spacing:-.02em;}
+.why .num small{font-size:18pt;font-weight:700;opacity:.7;margin-left:2px;}
+.why .lbl-st{margin-top:3mm;font-size:9.5pt;line-height:1.4;opacity:.9;}
+.why .watermark{position:absolute;right:-10mm;bottom:-15mm;font-size:80pt;font-weight:800;letter-spacing:-.02em;color:rgba(255,255,255,.06);transform:rotate(-12deg);pointer-events:none;white-space:nowrap;}
+.why-note{margin:6mm 0 0;position:relative;z-index:1;font-size:9.5pt;line-height:1.5;max-width:160mm;opacity:.95;}
+
+/* Page 2 */
+.p2-title{margin-top:6mm;}
+.p2-title .eyebrow{margin-bottom:2mm;}
+.p2-title h1{font-size:20pt;font-weight:800;line-height:1.1;text-transform:uppercase;letter-spacing:.005em;}
+.p2-hero{flex:1;margin-top:6mm;display:flex;flex-direction:column;gap:6mm;}
+.p2-hero .photo{flex:1;min-height:0;border-radius:2mm;overflow:hidden;}
+.p2-hero .photo img{width:100%;height:100%;object-fit:cover;display:block;}
+.p2-qr-row{display:flex;gap:6mm;align-items:center;border-top:1px solid var(--line);padding-top:5mm;}
+.p2-qr-row .qr{width:22mm;height:22mm;flex-shrink:0;}
+.p2-qr-row .qr img{width:100%;height:100%;}
+.p2-qr-row .text{font-size:10pt;color:var(--ink-2);line-height:1.5;}
+.p2-qr-row .text b{color:var(--ink);font-weight:700;display:block;font-size:11pt;margin-bottom:1mm;}
+.p2-benefits{margin-top:6mm;display:grid;grid-template-columns:1fr 1fr;gap:5mm 10mm;}
+.p2-benefits .bn-it{display:grid;grid-template-columns:9mm 1fr;gap:3mm;align-items:start;}
+.p2-benefits .bn-it .ic{width:7mm;height:7mm;border-radius:50%;background:var(--red);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:9pt;line-height:1;flex-shrink:0;}
+.p2-benefits .bn-it .ttl{font-size:10.5pt;font-weight:800;line-height:1.15;color:var(--ink);}
+.p2-benefits .bn-it .desc{font-size:8.5pt;line-height:1.4;color:var(--ink-2);margin-top:1mm;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+
+/* Page 3 gallery */
+.section-head{margin-top:4mm;}
+.section-head .small{font-size:11pt;color:var(--ink);font-weight:500;}
+.section-head .big{font-size:20pt;font-weight:800;text-transform:uppercase;line-height:1.1;letter-spacing:.005em;margin-top:1mm;}
+.gallery{flex:1;margin-top:6mm;min-height:0;display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:repeat(4,1fr);grid-template-areas:"a a a a b b" "a a a a b b" "a a a a c c" "d d e e e e";gap:4mm;}
+.gallery .g-img{border-radius:1.5mm;min-height:0;overflow:hidden;position:relative;}
+.gallery .g-img img{width:100%;height:100%;object-fit:cover;display:block;}
+.gallery .ga{grid-area:a;}
+.gallery .gb{grid-area:b;}
+.gallery .gc{grid-area:c;}
+.gallery .gd{grid-area:d;}
+.gallery .ge{grid-area:e;}
+.gallery .cap{position:absolute;left:3mm;bottom:3mm;right:3mm;background:rgba(20,23,26,.78);color:#fff;padding:1.8mm 3mm;border-radius:1mm;font-size:8.5pt;font-weight:700;letter-spacing:.01em;text-align:left;}
+
+/* Page 4 specs */
+.specs{margin-top:7mm;display:grid;grid-template-columns:1fr;gap:5mm;}
+.spec-group{}
+.spec-group .h{background:var(--red);color:#fff;padding:3.5mm 5mm;font-size:11pt;font-weight:700;letter-spacing:.04em;text-transform:uppercase;border-radius:1.5mm 1.5mm 0 0;}
+.spec-table{border:1px solid var(--line);border-top:0;border-radius:0 0 1.5mm 1.5mm;overflow:hidden;}
+.spec-row{display:grid;grid-template-columns:1fr auto;padding:2.7mm 5mm;align-items:baseline;border-bottom:1px solid var(--line);font-size:10.5pt;}
+.spec-row:nth-child(odd){background:#fafafa;}
+.spec-row:last-child{border-bottom:0;}
+.spec-row .k{color:var(--ink-2);}
+.spec-row .v{font-weight:700;font-variant-numeric:tabular-nums;}
+
+/* Page 5 price */
+.price-hero{margin-top:7mm;display:grid;grid-template-columns:1fr 1fr;gap:6mm;}
+.price-card{background:var(--red);color:#fff;padding:7mm 7mm 6mm;border-radius:2mm;position:relative;overflow:hidden;}
+.price-card.invert{background:#15171a;}
+.price-card .lbl-k{font-size:9pt;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.75);}
+.price-card .city{margin-top:1mm;font-size:13pt;font-weight:700;text-transform:uppercase;}
+.price-card .amount{margin-top:5mm;font-size:30pt;font-weight:800;line-height:1;letter-spacing:-.02em;font-variant-numeric:tabular-nums;}
+.price-card .amount small{font-size:18pt;font-weight:700;opacity:.7;margin-left:2px;}
+.price-watermark{position:absolute;right:-8mm;bottom:-12mm;font-size:60pt;font-weight:800;color:rgba(255,255,255,.06);transform:rotate(-12deg);white-space:nowrap;pointer-events:none;}
+.price-vat{margin-top:6mm;background:var(--ink);color:#fff;border-radius:2mm;padding:6mm 7mm 5mm;}
+.price-vat .lbl-k{font-size:9pt;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.75);margin-bottom:3mm;}
+.price-vat .row{display:flex;justify-content:space-between;align-items:baseline;padding:2.3mm 0;font-size:10.5pt;border-bottom:1px solid rgba(255,255,255,.15);}
+.price-vat .row .k{opacity:.78;max-width:120mm;}
+.price-vat .row .v{font-weight:700;font-variant-numeric:tabular-nums;}
+.price-vat .row.total{padding-top:4mm;font-size:13pt;border-top:2px solid rgba(255,255,255,.4);border-bottom:0;margin-top:1mm;}
+.price-vat .row.total .v{font-size:18pt;}
+.price-vat .row.sub{font-size:9pt;opacity:.65;padding:1mm 0;border:0;}
+.options{margin-top:6mm;border:1px solid var(--line);border-radius:2mm;overflow:hidden;}
+.options .opt-h{background:#fafafa;padding:3mm 5mm;font-size:9pt;letter-spacing:.16em;text-transform:uppercase;font-weight:700;color:var(--ink-2);display:flex;justify-content:space-between;}
+.options .opt-row{display:grid;grid-template-columns:7mm 1fr auto;align-items:center;padding:3mm 5mm;border-top:1px solid var(--line);font-size:10pt;}
+.options .opt-row .box{width:4.5mm;height:4.5mm;border:1.5px solid var(--ink-2);border-radius:1mm;}
+.options .opt-row .name{font-weight:600;}
+.options .opt-row .price{font-weight:700;color:var(--red);font-variant-numeric:tabular-nums;}
+
+/* Page 5/6 contacts */
+.p5-contacts-grid{margin-top:5mm;padding:5mm 6mm;border:1px solid var(--line);border-radius:2mm;display:grid;grid-template-columns:repeat(4,1fr);gap:6mm;}
+.p5-contacts-grid .ccol{display:flex;flex-direction:column;justify-content:center;}
+.p5-contacts-grid .ccol .ck{font-size:7.5pt;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:2mm;text-align:center;}
+.p5-contacts-grid .ccol .cv{font-size:12pt;font-weight:800;color:var(--ink);letter-spacing:.005em;line-height:1.1;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+/* Page 6 warranty */
+.warranty{margin-top:6mm;display:grid;grid-template-columns:repeat(2,1fr);gap:5mm;min-height:0;}
+.w-card{border:1px solid var(--line);border-radius:2mm;padding:6mm 6mm 5mm;display:flex;flex-direction:column;gap:1.5mm;background:#fafafa;}
+.w-card.dark{background:var(--ink);color:#fff;border-color:var(--ink);}
+.w-card.red{background:var(--red);color:#fff;border-color:var(--red);}
+.w-card .ix{font-family:'Manrope',monospace;font-size:7.5pt;letter-spacing:.18em;font-weight:700;opacity:.65;margin-bottom:1mm;}
+.w-card .big{font-size:30pt;font-weight:800;line-height:1;letter-spacing:-.02em;margin:1mm 0 1mm;font-variant-numeric:tabular-nums;}
+.w-card .big small{font-size:13pt;font-weight:700;opacity:.7;margin-left:1px;}
+.w-card .h{font-size:11pt;font-weight:800;line-height:1.15;}
+.w-card .d{font-size:9pt;line-height:1.45;opacity:.85;margin-top:auto;}
+
+/* Page footer */
+.page::after{content:"Коммерческое предложение не является публичной офертой · arbq.ru";position:absolute;bottom:6mm;left:var(--pad-x);right:var(--pad-x);font-size:7pt;color:var(--muted);text-align:center;letter-spacing:.02em;opacity:.85;}
+
+/* Панель редактирования */
+#edit-toolbar{
+  position:fixed;top:0;left:0;right:0;z-index:9999;
+  background:#15171a;color:#fff;padding:9px 16px;
+  display:none;align-items:center;gap:10px;
+  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:13px;
+  box-shadow:0 2px 8px rgba(0,0,0,.4);
+}
+#edit-toolbar.active{display:flex;}
+#edit-toolbar .tb-status{color:rgba(255,255,255,.6);font-size:12px;margin-right:4px;}
+#edit-toolbar button{
+  padding:5px 12px;border:none;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer;
+  background:rgba(255,255,255,.12);color:#fff;transition:background .15s;
+}
+#edit-toolbar button:hover{background:rgba(255,255,255,.22);}
+#edit-toolbar button:disabled{opacity:.5;cursor:not-allowed;}
+#btn-edit-mode{background:#e31e24;}
+#btn-edit-mode:hover{background:#c01920;}
+#btn-close-tab{margin-left:auto;background:transparent;color:rgba(255,255,255,.5);}
+#btn-close-tab:hover{background:rgba(255,255,255,.08);color:#fff;}
+body.editing-mode [contenteditable="true"]{
+  outline:1px dashed rgba(227,30,36,.55) !important;
+  border-radius:2px;cursor:text;
+}
+body.editing-mode [contenteditable="true"]:focus{
+  outline:2px solid #e31e24 !important;
+  background:rgba(227,30,36,.04);
+}
+
+@page{size:A4;margin:0;}
+@media print{
+  html,body{background:#fff;}
+  .stack{gap:0;padding:0;}
+  .page{box-shadow:none;margin:0;}
+  #edit-toolbar{display:none!important;}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-phone" viewBox="0 0 24 24">
+      <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A15 15 0 0 1 3 6a2 2 0 0 1 2-2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>
+    </symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24">
+      <rect x="3.5" y="5.5" width="17" height="15" rx="2" fill="none" stroke="currentColor" stroke-width="1.5"/>
+      <path d="M3.5 10h17M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- Общий заголовок (встраивается через JS в каждую страницу) -->
+<template id="tpl-head">
+  <header class="head">
+    <div class="brand">
+      <span class="mark"><img src="icons/logo_arbq_icon.png" alt="ARBQ.RU"></span>
+      <span class="name">ARBQ.RU</span>
+      <div class="badges">
+        <div class="cttexpo" aria-hidden="true">
+          <span class="a">СТТ</span><span class="b">EXPO</span><span class="c">УЧАСТНИК</span>
+        </div>
+        <div class="badge-text">
+          <span>ПРОМЫШЛЕННОЕ ОБОРУДОВАНИЕ</span>
+          <span>СИСТЕМЫ ПЕРЕРАБОТКИ МАТЕРИАЛОВ</span>
+        </div>
+      </div>
+    </div>
+    <div class="phone-block">
+      <span class="ic"><svg><use href="#i-phone"/></svg></span>
+      <div class="ph">
+        <b>8 800 600 6649</b>
+        <span>Бесплатный звонок по России</span>
+      </div>
+    </div>
+  </header>
+</template>
+
+<!-- Панель редактирования (появляется после сохранения PDF) -->
+<div id="edit-toolbar">
+  <span class="tb-status" id="toolbar-status">✓ PDF сохранён</span>
+  <button id="btn-edit-mode">✎ Редактировать</button>
+  <button id="btn-save-pdf">↓ Сохранить PDF</button>
+  <button id="btn-close-tab">✕ Закрыть</button>
+</div>
+
+<div class="stack">
+
+  <!-- ═══ СТРАНИЦА 1 — Обложка ═══ -->
+  <section class="page" id="page-1">
+    <div class="body">
+      <div class="p1-title">
+        <div class="eyebrow" id="p1-eyebrow">КОММЕРЧЕСКОЕ ПРЕДЛОЖЕНИЕ</div>
+        <div id="p1-client-block" style="display:none;margin-top:2mm;">
+          <span style="font-size:13pt;font-weight:600;color:var(--ink-2);">для </span><span id="p1-client-name" style="font-size:13pt;font-weight:700;color:var(--ink);">—</span>
+        </div>
+        <div class="p1-meta">
+          <svg viewBox="0 0 24 24"><use href="#i-cal"/></svg>
+          <span id="p1-date">—</span>
+        </div>
+      </div>
+
+      <div class="p1-stamp">Работаем с 2008 года</div>
+
+      <div class="p1-text">
+        <p class="lede">
+          Мы одна из крупнейших компаний в России по поставкам промышленного оборудования, КГШ,
+          систем переработки материалов, а также запасных частей для спецтехники.
+        </p>
+        <p class="lede">
+          Мы будем очень рады Вашему выбору и нашему сотрудничеству. Специалисты нашей компании
+          профессионально и грамотно проконсультируют вас на всех этапах сотрудничества.
+        </p>
+      </div>
+
+      <div class="p1-sig sig">
+        <span>С уважением,</span><br/>
+        <b id="p1-manager-name">—</b><br/>
+        <span>Менеджер по продажам ARBQ.RU</span><br/>
+        <span id="p1-manager-email" style="font-size:9pt;font-style:normal;">—</span>
+      </div>
+    </div>
+
+    <aside class="why">
+      <div class="watermark" aria-hidden="true">ARBQ.RU</div>
+      <h3>Почему мы?</h3>
+      <div class="why-grid">
+        <div class="stat">
+          <div class="num">16<small>+</small></div>
+          <div class="lbl-st">Лет успешной работы на российском рынке</div>
+        </div>
+        <div class="stat">
+          <div class="num">1500<small>+</small></div>
+          <div class="lbl-st">Довольных клиентов</div>
+        </div>
+        <div class="stat">
+          <div class="num">2700<small>+</small></div>
+          <div class="lbl-st">Позиций в наличии и под заказ</div>
+        </div>
+        <div class="stat">
+          <div class="num" style="font-size:18pt;padding-top:6mm;">Сервис</div>
+          <div class="lbl-st">Сервисный центр: гарантийное и постгарантийное обслуживание, оригинальные запчасти</div>
+        </div>
+      </div>
+      <p class="why-note">
+        В ARBQ.RU мы работаем напрямую с производителями, чтобы предложить нашим клиентам
+        лучшие цены и условия. Собственный сервисный центр обеспечивает гарантийное
+        и постгарантийное обслуживание, поставку оригинальных запчастей и оперативный выезд
+        специалиста на всех этапах эксплуатации техники.
+      </p>
+    </aside>
+  </section>
+
+  <!-- ═══ СТРАНИЦА 2 — Карточка товара ═══ -->
+  <section class="page" id="page-2">
+    <div class="body">
+      <div class="p2-title">
+        <div class="eyebrow">Коммерческое предложение</div>
+        <h1 id="p2-product-name">—</h1>
+      </div>
+
+      <div class="p2-hero">
+        <div class="photo" id="p2-main-image">
+          <div class="slot" style="width:100%;height:100%;">Фото товара</div>
+        </div>
+        <div class="p2-qr-row">
+          <div class="qr" id="p2-qr">
+            <div class="slot" style="width:22mm;height:22mm;">QR</div>
+          </div>
+          <div class="text">
+            <span id="p2-product-url" style="font-size:9.5pt;line-height:1.4;color:var(--ink-2);">Отсканируйте QR-код на мобильном устройстве</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="p2-benefits" id="p2-benefits">
+        <!-- Заполняется через JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ СТРАНИЦА 3 — Галерея ═══ -->
+  <section class="page" id="page-3">
+    <div class="body">
+      <div class="section-head">
+        <div class="small">Дополнительные изображения</div>
+        <div class="big" id="p3-product-name">—</div>
+      </div>
+
+      <div class="gallery" id="p3-gallery">
+        <div class="slot g-img ga">Изображение 1</div>
+        <div class="slot g-img gb">Изображение 2</div>
+        <div class="slot g-img gc">Изображение 3</div>
+        <div class="slot g-img gd">Изображение 4</div>
+        <div class="slot g-img ge">Изображение 5</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ СТРАНИЦА 4 — Характеристики ═══ -->
+  <section class="page" id="page-4">
+    <div class="body">
+      <div class="section-head">
+        <div class="small">Технические характеристики</div>
+        <div class="big" id="p4-product-name">—</div>
+      </div>
+      <div class="specs" id="p4-specs">
+        <!-- Заполняется через JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ СТРАНИЦА 5 — Расчёт стоимости ═══ -->
+  <section class="page" id="page-5">
+    <div class="body">
+      <div class="section-head">
+        <div class="small">Расчёт стоимости</div>
+        <div class="big" id="p5-product-name">—</div>
+      </div>
+
+      <div class="price-hero">
+        <div class="price-card">
+          <div class="lbl-k">Стоимость товара</div>
+          <div class="city">Москва</div>
+          <div class="amount"><span id="p5-price">—</span><small>₽</small></div>
+          <span class="price-watermark" aria-hidden="true">ЦЦ</span>
+        </div>
+        <div class="price-card invert">
+          <div class="lbl-k">Условия поставки</div>
+          <div class="city" style="font-size:10pt;margin-top:2mm;line-height:1.4;opacity:.85;">
+            Доставка по России транспортными компаниями.<br>Срок поставки уточняется менеджером.
+          </div>
+          <div class="amount" style="font-size:14pt;margin-top:4mm;"><span id="p5-price-note">Уточнить у менеджера</span></div>
+          <span class="price-watermark" aria-hidden="true">ДС</span>
+        </div>
+      </div>
+
+      <div class="price-vat">
+        <div class="lbl-k">Итоговая стоимость</div>
+        <div class="row">
+          <span class="k">Стоимость товара (включая НДС 22%)</span>
+          <span class="v"><span id="p5-price-2">—</span> ₽</span>
+        </div>
+        <!-- Доп. товары, услуги и доставка вставляются JS -->
+        <div id="p5-extra-rows"></div>
+        <div class="row total">
+          <span class="k">Итого к оплате</span>
+          <span class="v"><span id="p5-total">—</span> ₽</span>
+        </div>
+        <div class="row sub">
+          <span class="k">в т.ч. НДС 22%</span>
+          <span class="v" id="p5-vat">—</span>
+        </div>
+      </div>
+
+      <div class="options" id="p5-options">
+        <!-- Заполняется через JS если есть опции -->
+      </div>
+
+      <div class="p5-contacts-grid" style="margin-top:6mm;">
+        <div class="ccol"><div class="ck">Телефон</div><div class="cv">8 800 600 6649</div></div>
+        <div class="ccol"><div class="ck">E-mail</div><div class="cv" id="p5-email">—</div></div>
+        <div class="ccol"><div class="ck">Сайт</div><div class="cv">arbq.ru</div></div>
+        <div class="ccol"><div class="ck">Менеджер</div><div class="cv" id="p5-manager">—</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ СТРАНИЦА 6 — Гарантия и сервис ═══ -->
+  <section class="page" id="page-6">
+    <div class="body">
+      <div class="section-head">
+        <div class="small">Гарантия и сервис</div>
+        <div class="big">ПОЛНЫЙ ЦИКЛ ОБСЛУЖИВАНИЯ ТЕХНИКИ</div>
+      </div>
+
+      <div class="warranty">
+        <div class="w-card">
+          <div class="ix">04 · ВВОД В ЭКСПЛУАТАЦИЮ</div>
+          <div class="h">Обучение</div>
+          <div class="d">При необходимости проведём шеф-монтаж, обучим работе и нюансам техники.</div>
+        </div>
+        <div class="w-card red">
+          <div class="ix">01 · СРОК ГАРАНТИИ</div>
+          <div class="big" id="p6-warranty-months">12<small> мес</small></div>
+          <div class="h" id="p6-warranty-hours">или 1 000 моточасов</div>
+          <div class="d">С момента ввода в эксплуатацию — в зависимости от того, что наступит ранее.</div>
+        </div>
+        <div class="w-card">
+          <div class="ix">02 · СКЛАД ЗАПЧАСТЕЙ</div>
+          <div class="big">2 700<small>+</small></div>
+          <div class="h">Позиций в наличии</div>
+          <div class="d">Склад в Москве — доставка по всей России и странам СНГ.</div>
+        </div>
+        <div class="w-card dark">
+          <div class="ix">03 · ВРЕМЯ РЕАКЦИИ</div>
+          <div class="big">48<small> ч</small></div>
+          <div class="h">Выезд специалиста</div>
+          <div class="d">Гарантированный приезд инженера в пределах региона для диагностики и ремонта.</div>
+        </div>
+      </div>
+
+      <div class="p5-contacts-grid" style="margin-top:6mm;">
+        <div class="ccol"><div class="ck">Телефон</div><div class="cv">8 800 600 6649</div></div>
+        <div class="ccol"><div class="ck">E-mail</div><div class="cv" id="p6-email">—</div></div>
+        <div class="ccol"><div class="ck">Сайт</div><div class="cv">arbq.ru</div></div>
+        <div class="ccol"><div class="ck">Менеджер</div><div class="cv" id="p6-manager">—</div></div>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<script src="docx-gen.js"></script>
+<script src="generate.js"></script>
+</body>
+</html>

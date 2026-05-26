@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Настройки — КП Генератор</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    font-size:14px;background:#f5f5f5;color:#1a1a1a;min-height:100vh;
+  }
+  .layout{max-width:680px;margin:0 auto;padding:32px 20px;}
+  h1{font-size:22px;font-weight:700;color:#1a1a1a;margin-bottom:6px;}
+  .sub{color:#888;font-size:13px;margin-bottom:28px;}
+
+  .card{background:#fff;border-radius:10px;padding:22px 24px;margin-bottom:18px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+  .card h2{font-size:15px;font-weight:700;margin-bottom:16px;color:#1a1a1a;}
+
+  .field{margin-bottom:14px;}
+  .field:last-child{margin-bottom:0;}
+  .field label{display:block;font-size:12px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;}
+  .field input{
+    width:100%;padding:9px 12px;border:1px solid #ddd;border-radius:7px;
+    font-size:14px;color:#1a1a1a;background:#fff;outline:none;transition:border-color .2s;
+  }
+  .field input:focus{border-color:#e31e24;}
+  .field .hint{font-size:11px;color:#aaa;margin-top:4px;}
+
+  .row{display:flex;gap:10px;}
+  .row .field{flex:1;}
+
+  .btn{
+    padding:9px 18px;border:none;border-radius:7px;
+    font-size:13px;font-weight:600;cursor:pointer;transition:background .2s;
+  }
+  .btn-primary{background:#e31e24;color:#fff;}
+  .btn-primary:hover{background:#c01920;}
+  .btn-secondary{background:#f0f0f0;color:#333;}
+  .btn-secondary:hover{background:#e5e5e5;}
+  .btn-danger{background:#fff;color:#e31e24;border:1px solid #e31e24;}
+  .btn-danger:hover{background:#fff2f2;}
+  .btn-sm{padding:6px 12px;font-size:12px;}
+
+  /* Managers list */
+  .managers-list{margin-bottom:14px;}
+  .manager-item{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:10px 12px;border:1px solid #eee;border-radius:7px;margin-bottom:8px;
+    background:#fafafa;
+  }
+  .manager-item .info .name{font-weight:700;font-size:13px;}
+  .manager-item .info .email{font-size:12px;color:#888;margin-top:2px;}
+  .manager-item .actions{display:flex;gap:6px;}
+
+  /* Add manager form */
+  #add-form{display:none;border-top:1px solid #eee;padding-top:16px;margin-top:4px;}
+  #add-form.visible{display:block;}
+
+  .save-row{display:flex;align-items:center;gap:10px;margin-top:16px;}
+  .saved-msg{color:#27ae60;font-size:12px;font-weight:600;opacity:0;transition:opacity .3s;}
+  .saved-msg.show{opacity:1;}
+
+  /* Update card */
+  .update-status{
+    display:flex;align-items:center;gap:10px;padding:12px 14px;
+    border-radius:7px;background:#f8f8f8;border:1px solid #eee;margin-bottom:14px;
+    font-size:13px;color:#666;min-height:44px;
+  }
+  .update-status .dot{
+    width:10px;height:10px;border-radius:50%;background:#ccc;flex-shrink:0;
+  }
+  .update-status.ok .dot{background:#27ae60;}
+  .update-status.err .dot{background:#e31e24;}
+  .update-status.busy .dot{background:#f39c12;animation:pulse2 1s infinite;}
+  @keyframes pulse2{0%,100%{opacity:1;}50%{opacity:.3;}}
+  .update-log{
+    font-size:11px;font-family:monospace;background:#1a1a1a;color:#aaa;
+    padding:10px 12px;border-radius:6px;max-height:100px;overflow-y:auto;
+    white-space:pre-wrap;display:none;margin-top:10px;
+  }
+  .update-log.visible{display:block;}
+</style>
+</head>
+<body>
+<div class="layout">
+  <h1>Настройки КП Генератора</h1>
+  <div class="sub">Укажите API ключ и добавьте менеджеров</div>
+
+  <!-- Менеджеры -->
+  <div class="card">
+    <h2>Менеджеры</h2>
+    <div class="managers-list" id="managers-list">
+      <div style="color:#aaa;font-size:13px;text-align:center;padding:10px 0;">Менеджеры не добавлены</div>
+    </div>
+    <button class="btn btn-secondary" id="btn-add-manager">+ Добавить менеджера</button>
+
+    <div id="add-form">
+      <div class="field" style="margin-top:14px;">
+        <label>ФИО менеджера</label>
+        <input type="text" id="mgr-name" placeholder="Иванов Иван Иванович">
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input type="email" id="mgr-email" placeholder="ivan@arbq.ru">
+      </div>
+      <div style="display:flex;gap:8px;margin-top:4px;">
+        <button class="btn btn-primary btn-sm" id="btn-save-manager">Добавить</button>
+        <button class="btn btn-secondary btn-sm" id="btn-cancel-manager">Отмена</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Обновление расширения -->
+  <div class="card">
+    <h2>Обновление расширения</h2>
+    <div class="update-status" id="update-status">
+      <div class="dot"></div>
+      <span id="update-status-text">Нажмите кнопку для проверки обновлений</span>
+    </div>
+    <div class="update-log" id="update-log"></div>
+    <div style="display:flex;gap:8px;">
+      <button class="btn btn-primary" id="btn-update">↻ Обновить расширение</button>
+      <button class="btn btn-secondary" id="btn-update-log-toggle" style="display:none;">Подробнее</button>
+    </div>
+    <div style="font-size:11px;color:#aaa;margin-top:8px;line-height:1.5;">
+      Загружает последнюю версию с сервера.<br>
+      После обновления нажмите ↻ на странице chrome://extensions.
+    </div>
+  </div>
+
+</div>
+<script src="options.js"></script>
+</body>
+</html>
