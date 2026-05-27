@@ -7,6 +7,20 @@ const SEARCH_URL = 'http://localhost:11435';
 
 let currentController = null; // активный AbortController
 
+// ─── Предзаполнение менеджеров при первой установке ──────────────
+chrome.runtime.onInstalled.addListener(async ({ reason }) => {
+  if (reason !== 'install') return;
+  const { managers = [] } = await chrome.storage.sync.get('managers');
+  if (managers.length > 0) return;
+  await chrome.storage.sync.set({
+    managers: [
+      { id: '1', name: 'Воронкин Александр', email: 'voronkin@arbq.ru' },
+      { id: '2', name: 'Баранов Дмитрий',    email: 'baranov@arbq.ru'  },
+      { id: '3', name: 'Шеин Александр',     email: 'sa@arbq.ru'       }
+    ]
+  });
+});
+
 // ─── Поиск доп. данных о товаре (опционально) ────────────────────
 async function fetchSearchContext(title) {
   try {
