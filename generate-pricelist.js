@@ -1,5 +1,5 @@
 // generate-pricelist.js — заполняет прайс-лист и запускает PDF + DOCX
-/* global generatePricelistDocx */
+/* global downloadPricelistDocx */
 
 const sessionKey = new URLSearchParams(location.search).get('session');
 const ROWS_PER_PAGE = 6;
@@ -65,15 +65,16 @@ function qrUrl(url) {
   return 'https://api.qrserver.com/v1/create-qr-code/?size=60x60&margin=2&data=' + encodeURIComponent(url);
 }
 
-// ─── Pre-fetch QR кодов как data URI ─────────────────────────────
+// ─── Pre-fetch QR кодов как data URI (не более 10 параллельно) ───
 async function fetchQRCodes(items) {
   const map = new Map();
-  await Promise.all(
-    items
-      .filter(item => item.url)
-      .map(async item => {
+  const urls = items.filter(item => item.url).map(item => item.url);
+  const CHUNK = 10;
+  for (let i = 0; i < urls.length; i += CHUNK) {
+    await Promise.all(
+      urls.slice(i, i + CHUNK).map(async url => {
         try {
-          const resp = await fetch(qrUrl(item.url), { signal: AbortSignal.timeout(8000) });
+          const resp = await fetch(qrUrl(url), { signal: AbortSignal.timeout(8000) });
           if (!resp.ok) return;
           const blob = await resp.blob();
           const dataUri = await new Promise(res => {
@@ -81,10 +82,11 @@ async function fetchQRCodes(items) {
             reader.onload = () => res(reader.result);
             reader.readAsDataURL(blob);
           });
-          map.set(item.url, dataUri);
+          map.set(url, dataUri);
         } catch { /* продолжаем без QR */ }
       })
-  );
+    );
+  }
   return map;
 }
 

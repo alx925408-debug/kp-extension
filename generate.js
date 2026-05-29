@@ -327,6 +327,7 @@ function waitForImages() {
       if (img.complete) done();
       else { img.addEventListener('load', done); img.addEventListener('error', done); }
     });
+    setTimeout(resolve, 10000); // страховочный таймаут
   });
 }
 
@@ -400,8 +401,10 @@ async function main() {
   document.getElementById('toolbar-status').textContent = 'Генерирую PDF…';
 
   chrome.runtime.sendMessage({ type: 'READY_FOR_PDF', filename }, resp => {
+    const err = chrome.runtime.lastError?.message || resp?.error;
+    if (err) console.error('[PDF] ошибка:', err);
     document.getElementById('toolbar-status').textContent =
-      resp && resp.ok ? '✓ PDF сохранён' : '✗ Ошибка генерации PDF';
+      resp?.ok ? '✓ PDF сохранён' : `✗ ${err || 'Ошибка генерации PDF'}`;
   });
 }
 
@@ -451,7 +454,10 @@ document.getElementById('btn-save-pdf').addEventListener('click', () => {
   chrome.runtime.sendMessage({ type: 'REGENERATE_PDF', filename: _editFilename }, resp => {
     btn.disabled = false;
     btn.textContent = '↓ Сохранить PDF';
-    document.getElementById('toolbar-status').textContent = resp && resp.ok ? '✓ PDF обновлён' : '✗ Ошибка';
+    const err = chrome.runtime.lastError?.message || resp?.error;
+    if (err) console.error('[PDF] ошибка:', err);
+    document.getElementById('toolbar-status').textContent =
+      resp?.ok ? '✓ PDF обновлён' : `✗ ${err || 'Ошибка'}`;
   });
 });
 

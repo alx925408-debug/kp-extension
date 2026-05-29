@@ -62,7 +62,7 @@
       });
     }
 
-    return result;
+    return result.slice(0, 20);
   }
 
   function getDescription() {
