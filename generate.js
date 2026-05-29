@@ -383,16 +383,6 @@ async function main() {
   // Дополнительная пауза для корректного рендера
   await new Promise(r => setTimeout(r, 800));
 
-  // Генерация DOCX
-  try {
-    await downloadDocx(data);
-  } catch (e) {
-    console.warn('DOCX generation error:', e);
-  }
-
-  // Пауза между DOCX и PDF
-  await new Promise(r => setTimeout(r, 500));
-
   // Сигнал фоновому скрипту: готов к PDF
   const clientPart = data.client_name ? `_${sanitizeFilename(data.client_name)}` : '';
   const filename = `КП_${sanitizeFilename(data.product_short || data.product_name)}${clientPart}`;

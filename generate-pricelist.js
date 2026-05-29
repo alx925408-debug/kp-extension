@@ -260,15 +260,6 @@ async function main() {
   await waitForImages();
   await new Promise(r => setTimeout(r, 800));
 
-  // Генерация DOCX
-  try {
-    await downloadPricelistDocx(data);
-  } catch (e) {
-    console.warn('Pricelist DOCX error:', e);
-  }
-
-  await new Promise(r => setTimeout(r, 500));
-
   const catalogPart = sanitizeFilename(data.catalog_title || (data.items?.[0]?.title) || 'каталог');
   const clientPart = data.client_name ? ` для ${sanitizeFilename(data.client_name)}` : '';
   const filename = `Прайс-лист ${catalogPart}${clientPart}`;
