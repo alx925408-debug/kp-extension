@@ -310,7 +310,7 @@ async function scrapeProductDetails(items) {
         return {
           ...item,
           images:      resp.scraped.images      || (item.image ? [item.image] : []),
-          description: (resp.scraped.description || '').slice(0, 300),
+          description: (resp.scraped.description || '').slice(0, 500),
           specs:       resp.scraped.specs        || []
         };
       }

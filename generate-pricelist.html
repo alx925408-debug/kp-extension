@@ -120,18 +120,15 @@ hr.rule{height:1px;background:var(--line);border:0;margin:0;}
 
 /* Расширенные страницы товаров */
 .ext-layout{display:flex;gap:6mm;flex:1;min-height:0;overflow:hidden;}
-.ext-left{width:76mm;flex-shrink:0;display:flex;flex-direction:column;gap:3mm;}
-.ext-main-img{flex:1;min-height:0;border-radius:2mm;overflow:hidden;background:#f7f7f7;}
-.ext-main-img img{width:100%;height:100%;object-fit:contain;display:block;}
-.ext-extra-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:2mm;flex-shrink:0;}
-.ext-extra-img{border-radius:1.5mm;overflow:hidden;background:#f7f7f7;aspect-ratio:1;}
-.ext-extra-img img{width:100%;height:100%;object-fit:cover;display:block;}
+.ext-left{width:72mm;flex-shrink:0;display:flex;flex-direction:column;gap:2mm;}
+.ext-img-slot{flex:1;min-height:0;border-radius:1.5mm;overflow:hidden;background:#f7f7f7;}
+.ext-img-slot img{width:100%;height:100%;object-fit:contain;display:block;}
 .ext-right{flex:1;min-height:0;display:flex;flex-direction:column;gap:3mm;overflow:hidden;}
 .ext-name{font-size:12pt;font-weight:800;line-height:1.25;color:var(--ink);}
 .ext-price-block{flex-shrink:0;}
 .ext-price{font-size:20pt;font-weight:800;color:var(--red);line-height:1;}
 .ext-price-sub{font-size:7.5pt;color:var(--muted);margin-top:1mm;}
-.ext-desc{font-size:8.5pt;line-height:1.55;color:var(--ink-2);flex-shrink:0;}
+.ext-desc{font-size:8.5pt;line-height:1.55;color:var(--ink-2);flex-shrink:0;hyphens:auto;word-break:break-word;overflow-wrap:break-word;}
 .ext-specs{flex:1;min-height:0;overflow:hidden;}
 .ext-spec-group{margin-bottom:2.5mm;}
 .ext-spec-group:last-child{margin-bottom:0;}

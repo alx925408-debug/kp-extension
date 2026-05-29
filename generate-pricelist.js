@@ -179,6 +179,16 @@ function waitForImages() {
   });
 }
 
+// ─── Обрезать описание на границе предложения ─────────────────────
+function descTrim(text, max) {
+  if (!text || text.length <= max) return text;
+  const sub = text.slice(0, max);
+  const lastPunct = Math.max(sub.lastIndexOf('. '), sub.lastIndexOf('! '), sub.lastIndexOf('? '));
+  if (lastPunct > max * 0.5) return sub.slice(0, lastPunct + 1);
+  const lastSpace = sub.lastIndexOf(' ');
+  return (lastSpace > max * 0.5 ? sub.slice(0, lastSpace) : sub) + '…';
+}
+
 // ─── Расширенные страницы товаров ────────────────────────────────
 function buildExtendedPages(data) {
   const items = data.items || [];
@@ -192,11 +202,13 @@ function buildExtendedPages(data) {
     page.className = 'page';
     page.appendChild(tplHead.content.cloneNode(true));
 
-    const mainImg  = (item.images && item.images[0]) || item.image || '';
-    const extraImgs = (item.images || []).slice(1, 5);
+    const allImgs = [...new Set(
+      [(item.images && item.images[0]) || item.image, ...(item.images || []).slice(1, 5)]
+        .filter(Boolean)
+    )];
 
-    const extraHtml = extraImgs.map(src =>
-      `<div class="ext-extra-img"><img src="${esc(src)}" alt="" crossorigin="anonymous"></div>`
+    const imgsHtml = allImgs.map(src =>
+      `<div class="ext-img-slot"><img src="${esc(src)}" alt=""></div>`
     ).join('');
 
     const specsHtml = (item.specs || []).map(group => `
@@ -208,21 +220,20 @@ function buildExtendedPages(data) {
       </div>
     `).join('');
 
+    const descText = descTrim(item.description || '', 400);
+
     const body = document.createElement('div');
     body.className = 'body';
     body.innerHTML = `
       <div class="ext-layout">
-        <div class="ext-left">
-          ${mainImg ? `<div class="ext-main-img"><img src="${esc(mainImg)}" alt="" crossorigin="anonymous"></div>` : ''}
-          ${extraImgs.length ? `<div class="ext-extra-grid">${extraHtml}</div>` : ''}
-        </div>
+        <div class="ext-left">${imgsHtml}</div>
         <div class="ext-right">
           <div class="ext-name">${esc(item.title)}</div>
           <div class="ext-price-block">
             <div class="ext-price">${item.price ? fmt(item.price) + ' ₽' : 'По запросу'}</div>
             <div class="ext-price-sub">${esc(pfText)}</div>
           </div>
-          ${item.description ? `<div class="ext-desc">${esc(item.description)}</div>` : ''}
+          ${descText ? `<div class="ext-desc" lang="ru">${esc(descText)}</div>` : ''}
           <div class="ext-specs">${specsHtml || ''}</div>
         </div>
       </div>
