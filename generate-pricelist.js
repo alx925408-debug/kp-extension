@@ -179,6 +179,40 @@ function waitForImages() {
   });
 }
 
+// ─── Сжать изображения через Canvas (уменьшает вес PDF) ──────────
+async function compressImages(selector, maxPx, quality) {
+  const imgs = [...document.querySelectorAll(selector)]
+    .filter(img => img.complete && img.naturalWidth && !img.src.startsWith('data:'));
+  const BATCH = 5;
+  for (let i = 0; i < imgs.length; i += BATCH) {
+    await Promise.all(imgs.slice(i, i + BATCH).map(async img => {
+      const src = img.src;
+      try {
+        const resp = await fetch(src, { signal: AbortSignal.timeout(6000) });
+        if (!resp.ok) return;
+        const blob = await resp.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        await new Promise(res => {
+          const tmp = new Image();
+          tmp.onload = () => {
+            const scale = Math.min(maxPx / Math.max(tmp.naturalWidth, tmp.naturalHeight), 1);
+            const w = Math.round(tmp.naturalWidth * scale);
+            const h = Math.round(tmp.naturalHeight * scale);
+            const cv = document.createElement('canvas');
+            cv.width = w; cv.height = h;
+            cv.getContext('2d').drawImage(tmp, 0, 0, w, h);
+            URL.revokeObjectURL(blobUrl);
+            img.src = cv.toDataURL('image/jpeg', quality);
+            res();
+          };
+          tmp.onerror = () => { URL.revokeObjectURL(blobUrl); res(); };
+          tmp.src = blobUrl;
+        });
+      } catch { /* оставляем оригинал */ }
+    }));
+  }
+}
+
 // ─── Обрезать описание на границе предложения ─────────────────────
 function descTrim(text, max) {
   if (!text || text.length <= max) return text;
@@ -349,6 +383,13 @@ async function main() {
 
   await document.fonts.ready;
   await waitForImages();
+
+  // Сжать изображения перед PDF (основной способ уменьшить вес файла)
+  // Слоты товаров на расширенных страницах: 36mm × 150dpi ≈ 213px → max 500px
+  // Миниатюры в таблице прайса: 28mm × 150dpi ≈ 160px → max 200px
+  await compressImages('.ext-img-slot img', 500, 0.65);
+  await compressImages('.pl-img',           200, 0.70);
+
   await new Promise(r => setTimeout(r, 800));
 
   const catalogPart = sanitizeFilename(data.catalog_title || (data.items?.[0]?.title) || 'каталог');
