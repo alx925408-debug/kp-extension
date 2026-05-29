@@ -423,7 +423,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           date:           msg.date,
           client_name:    msg.client_name    || null,
           payment_form:   msg.payment_form   || 'nds22',
-          catalog_title:  msg.catalog_title  || ''
+          catalog_title:  msg.catalog_title  || '',
+          extended:       msg.extended       || false
         };
         const sessionKey = 'kp_pl_' + Date.now();
         await chrome.storage.local.set({ [sessionKey]: data });
