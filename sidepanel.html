@@ -289,9 +289,24 @@
       </select>
     </div>
 
-    <button class="btn-generate" id="btn-generate-pricelist" disabled>
-      Создать прайс-лист
-    </button>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px;">
+      <button class="btn-generate" id="btn-generate-pricelist" disabled>
+        Создать прайс-лист
+      </button>
+      <button class="btn-generate" id="btn-generate-pricelist-extended" disabled
+              style="background:#15171a;">
+        Расширенный прайс-лист
+      </button>
+    </div>
+  </div>
+
+  <!-- Скрапинг деталей товаров -->
+  <div id="state-scraping" class="state">
+    <div class="spinner"></div>
+    <div class="loading-text" id="scraping-text">Загружаю данные товаров…</div>
+    <div style="height:4px;background:#eee;border-radius:2px;overflow:hidden;margin-top:12px;">
+      <div id="scraping-bar" style="height:100%;background:#e31e24;width:0%;transition:width .3s;"></div>
+    </div>
   </div>
 
   <!-- Идёт генерация -->

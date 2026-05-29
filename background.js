@@ -224,12 +224,11 @@ async function generatePDF(tabId, filename) {
   });
 }
 
-// ─── Загрузка одной страницы каталога (вызывается из сайдбара) ───
-async function scrapeCatalogPage(url) {
+// ─── Общий скрапер фоновой вкладки ───────────────────────────────
+async function scrapeTabByUrl(url, scriptFile) {
   let bgTab;
   try {
     bgTab = await chrome.tabs.create({ url, active: false });
-
     await new Promise((resolve) => {
       const listener = (tabId2, changeInfo) => {
         if (tabId2 === bgTab.id && changeInfo.status === 'complete') {
@@ -240,18 +239,22 @@ async function scrapeCatalogPage(url) {
       chrome.tabs.onUpdated.addListener(listener);
       setTimeout(resolve, 12000);
     });
-
     const results = await chrome.scripting.executeScript({
       target: { tabId: bgTab.id },
-      files: ['content-catalog.js']
+      files: [scriptFile]
     });
-    const pageData = results[0]?.result || { items: [], nextPageUrl: null };
-    return { items: pageData.items || [], nextPageUrl: pageData.nextPageUrl || null };
+    return results[0]?.result || null;
   } finally {
     if (bgTab) {
       try { chrome.tabs.remove(bgTab.id); } catch (_) {}
     }
   }
+}
+
+// ─── Загрузка одной страницы каталога (вызывается из сайдбара) ───
+async function scrapeCatalogPage(url) {
+  const pageData = await scrapeTabByUrl(url, 'content-catalog.js');
+  return { items: pageData?.items || [], nextPageUrl: pageData?.nextPageUrl || null };
 }
 
 // ─── Обработка сообщений ─────────────────────────────────────────
@@ -309,6 +312,19 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       try {
         const result = await scrapeCatalogPage(msg.url);
         sendResponse({ ok: true, ...result });
+      } catch (e) {
+        sendResponse({ error: e.message });
+      }
+    })();
+    return true;
+  }
+
+  // Скрапинг страницы товара для расширенного прайс-листа
+  if (msg.type === 'SCRAPE_PRODUCT_PAGE') {
+    (async () => {
+      try {
+        const scraped = await scrapeTabByUrl(msg.url, 'content-arbq.js');
+        sendResponse({ ok: true, scraped });
       } catch (e) {
         sendResponse({ error: e.message });
       }

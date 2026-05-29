@@ -179,6 +179,60 @@ function waitForImages() {
   });
 }
 
+// ─── Расширенные страницы товаров ────────────────────────────────
+function buildExtendedPages(data) {
+  const items = data.items || [];
+  const stack = document.querySelector('.stack');
+  const tplHead = document.getElementById('tpl-head');
+  const pf = data.payment_form || 'nds22';
+  const pfText = pfLabel(pf);
+
+  items.forEach(item => {
+    const page = document.createElement('section');
+    page.className = 'page';
+    page.appendChild(tplHead.content.cloneNode(true));
+
+    const mainImg  = (item.images && item.images[0]) || item.image || '';
+    const extraImgs = (item.images || []).slice(1, 5);
+
+    const extraHtml = extraImgs.map(src =>
+      `<div class="ext-extra-img"><img src="${esc(src)}" alt="" crossorigin="anonymous"></div>`
+    ).join('');
+
+    const specsHtml = (item.specs || []).map(group => `
+      <div class="ext-spec-group">
+        <div class="ext-spec-title">${esc(group.group)}</div>
+        ${(group.items || []).map(s =>
+          `<div class="ext-spec-row"><span class="ext-spec-k">${esc(s.key)}</span><span class="ext-spec-v">${esc(s.value)}</span></div>`
+        ).join('')}
+      </div>
+    `).join('');
+
+    const body = document.createElement('div');
+    body.className = 'body';
+    body.innerHTML = `
+      <div class="ext-layout">
+        <div class="ext-left">
+          ${mainImg ? `<div class="ext-main-img"><img src="${esc(mainImg)}" alt="" crossorigin="anonymous"></div>` : ''}
+          ${extraImgs.length ? `<div class="ext-extra-grid">${extraHtml}</div>` : ''}
+        </div>
+        <div class="ext-right">
+          <div class="ext-name">${esc(item.title)}</div>
+          <div class="ext-price-block">
+            <div class="ext-price">${item.price ? fmt(item.price) + ' ₽' : 'По запросу'}</div>
+            <div class="ext-price-sub">${esc(pfText)}</div>
+          </div>
+          ${item.description ? `<div class="ext-desc">${esc(item.description)}</div>` : ''}
+          <div class="ext-specs">${specsHtml || ''}</div>
+        </div>
+      </div>
+    `;
+
+    page.appendChild(body);
+    stack.appendChild(page);
+  });
+}
+
 // ─── Тулбар ──────────────────────────────────────────────────────
 let _plFilename = '';
 
@@ -255,6 +309,7 @@ async function main() {
   fillCover(data);
   const qrMap = await fetchQRCodes(data.items || []);
   buildProductPages(data, qrMap);
+  if (data.extended) buildExtendedPages(data);
 
   await document.fonts.ready;
   await waitForImages();

@@ -197,11 +197,11 @@ function updateCatalogSelectedCount() {
 
 function updateCatalogBtn() {
   const sel = $('cat-manager-select');
+  const ok = sel && sel.value !== '' && getCheckedItems().length > 0;
   const btn = $('btn-generate-pricelist');
-  if (!btn) return;
-  const hasManager = sel && sel.value !== '';
-  const hasItems = getCheckedItems().length > 0;
-  btn.disabled = !hasManager || !hasItems;
+  const btnExt = $('btn-generate-pricelist-extended');
+  if (btn) btn.disabled = !ok;
+  if (btnExt) btnExt.disabled = !ok;
 }
 
 function fillCatalogItemsList(items) {
@@ -269,60 +269,116 @@ if ($('cat-manager-select')) {
 }
 
 if ($('btn-generate-pricelist')) $('btn-generate-pricelist').addEventListener('click', async () => {
+  const base = await buildPricelistPayload(false);
+  if (!base) return;
+  showState('generating');
+  chrome.runtime.sendMessage({ type: 'GENERATE_PRICELIST', ...base }, response => {
+    if (chrome.runtime.lastError || response?.error) {
+      showError(response?.error || chrome.runtime.lastError?.message);
+      return;
+    }
+    setTimeout(() => window.close(), 3000);
+  });
+});
+
+
+// ─── Расширенный прайс-лист: скрапинг деталей товаров ────────────
+async function scrapeProductDetails(items) {
+  const withUrl = items.filter(i => i.url);
+  const total = withUrl.length;
+  let done = 0;
+
+  const detailMap = new Map();
+
+  for (const item of withUrl) {
+    try {
+      const resp = await new Promise(resolve => {
+        chrome.runtime.sendMessage({ type: 'SCRAPE_PRODUCT_PAGE', url: item.url }, r => {
+          resolve(chrome.runtime.lastError ? null : r);
+        });
+      });
+      if (resp?.ok && resp.scraped) {
+        detailMap.set(item.url, {
+          images:      resp.scraped.images || [],
+          description: (resp.scraped.description || '').slice(0, 300),
+          specs:       resp.scraped.specs   || []
+        });
+      }
+    } catch { /* пропускаем */ }
+
+    done++;
+    const pct = Math.round(done / total * 100);
+    const barEl = $('scraping-bar');
+    const txtEl = $('scraping-text');
+    if (barEl) barEl.style.width = pct + '%';
+    if (txtEl) txtEl.textContent = `Загружаю данные товаров: ${done} / ${total}`;
+  }
+
+  return items.map(item => ({
+    ...item,
+    ...(detailMap.get(item.url) || {
+      images:      item.image ? [item.image] : [],
+      description: '',
+      specs:       []
+    })
+  }));
+}
+
+async function buildPricelistPayload(extended) {
   const managerId = $('cat-manager-select').value;
-  if (!managerId) return;
+  if (!managerId) return null;
 
   const { managers = [] } = await chrome.storage.sync.get('managers');
   const manager = managers.find(m => m.id === managerId);
-  if (!manager) return;
+  if (!manager) return null;
 
-  const today = new Date();
-  const dateStr = today.toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
-
+  const dateStr = new Date().toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' });
   const selectedItems = getCheckedItems();
-  if (!selectedItems.length) return;
+  if (!selectedItems.length) return null;
 
-  const sortVal = $('cat-sort') ? $('cat-sort').value : 'none';
+  const sortVal = $('cat-sort')?.value || 'none';
   let sortedItems = [...selectedItems];
   if (sortVal === 'price-asc') {
-    sortedItems.sort((a, b) => {
-      if (a.price == null) return 1;
-      if (b.price == null) return -1;
-      return a.price - b.price;
-    });
+    sortedItems.sort((a, b) => (a.price == null ? 1 : b.price == null ? -1 : a.price - b.price));
   } else if (sortVal === 'price-desc') {
-    sortedItems.sort((a, b) => {
-      if (a.price == null) return 1;
-      if (b.price == null) return -1;
-      return b.price - a.price;
-    });
+    sortedItems.sort((a, b) => (a.price == null ? 1 : b.price == null ? -1 : b.price - a.price));
   } else if (sortVal === 'name-asc') {
     sortedItems.sort((a, b) => (a.title || '').localeCompare(b.title || '', 'ru'));
   }
 
-  showState('generating');
+  return {
+    items:         sortedItems,
+    manager_name:  manager.name,
+    manager_email: manager.email,
+    date:          dateStr,
+    client_name:   $('cat-client-name').value.trim() || null,
+    payment_form:  $('cat-payment-form').value,
+    catalog_title: catalogTitle || '',
+    extended
+  };
+}
 
-  chrome.runtime.sendMessage(
-    {
-      type:          'GENERATE_PRICELIST',
-      items:         sortedItems,
-      manager_name:  manager.name,
-      manager_email: manager.email,
-      date:          dateStr,
-      client_name:   $('cat-client-name').value.trim() || null,
-      payment_form:  $('cat-payment-form').value,
-      catalog_title: catalogTitle || ''
-    },
-    response => {
+if ($('btn-generate-pricelist-extended')) {
+  $('btn-generate-pricelist-extended').addEventListener('click', async () => {
+    const base = await buildPricelistPayload(true);
+    if (!base) return;
+
+    showState('scraping');
+
+    const itemsWithDetails = await scrapeProductDetails(base.items);
+    base.items = itemsWithDetails;
+
+    showState('generating');
+
+    chrome.runtime.sendMessage({ type: 'GENERATE_PRICELIST', ...base }, response => {
       if (chrome.runtime.lastError || response?.error) {
         showError(response?.error || chrome.runtime.lastError?.message);
         return;
       }
       setTimeout(() => window.close(), 3000);
-    }
-  );
-});
-
+    });
+  });
+}
 
 function fillForm(data) {
   $('product-name-preview').textContent = data.title || '—';
