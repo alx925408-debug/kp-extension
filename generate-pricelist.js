@@ -229,6 +229,14 @@ function buildExtendedPages(data, qrMap) {
       </div>` : '';
     const descText = descTrim(item.description || '', 400);
 
+    const contactsHtml = `
+      <div class="pl-contacts-bar" style="margin-top:3mm;">
+        <div class="cc"><div class="ck">Телефон</div><div class="cv">8 800 600 6649</div></div>
+        <div class="cc"><div class="ck">E-mail</div><div class="cv">${esc(data.manager_email || 'info@arbq.ru')}</div></div>
+        <div class="cc"><div class="ck">Сайт</div><div class="cv">arbq.ru</div></div>
+        <div class="cc"><div class="ck">Менеджер</div><div class="cv">${esc(data.manager_name || '—')}</div></div>
+      </div>`;
+
     const body = document.createElement('div');
     body.className = 'body';
     body.innerHTML = `
@@ -242,9 +250,10 @@ function buildExtendedPages(data, qrMap) {
           </div>
           ${descText ? `<div class="ext-desc" lang="ru">${esc(descText)}</div>` : ''}
           <div class="ext-specs">${specsHtml || ''}</div>
+          ${qrBarHtml}
         </div>
       </div>
-      ${qrBarHtml}
+      ${contactsHtml}
     `;
 
     page.appendChild(body);
