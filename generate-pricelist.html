@@ -16,8 +16,7 @@
 html,body{margin:0;padding:0;background:#e6e6e3;color:var(--ink);}
 body{font-family:'Manrope','Helvetica Neue',Arial,sans-serif;font-size:10.5pt;line-height:1.45;-webkit-font-smoothing:antialiased;}
 .stack{display:flex;flex-direction:column;align-items:center;gap:8mm;padding:12mm 0 18mm;}
-.page{width:var(--page-w);height:var(--page-h);background:var(--paper);color:var(--ink);box-shadow:0 2px 8px rgba(0,0,0,.07),0 14px 40px rgba(0,0,0,.08);position:relative;overflow:hidden;page-break-after:always;}
-.page:last-child{page-break-after:auto;}
+.page{width:var(--page-w);height:var(--page-h);background:var(--paper);color:var(--ink);box-shadow:0 2px 8px rgba(0,0,0,.07),0 14px 40px rgba(0,0,0,.08);position:relative;overflow:hidden;}
 
 /* Brand / header */
 .brand .cttexpo{display:flex;flex-direction:column;align-items:stretch;border:1px solid var(--ink);border-radius:1mm;padding:1mm 2mm;line-height:1;font-weight:800;color:var(--ink);min-width:11mm;text-align:center;margin-left:4mm;}
@@ -150,10 +149,7 @@ hr.rule{height:1px;background:var(--line);border:0;margin:0;}
 @media print{
   html,body{background:#fff;}
   .stack{display:block;gap:0;padding:0;}
-  .page{box-shadow:none;margin:0;overflow:hidden;
-    page-break-after:always;break-after:page;
-    page-break-inside:avoid;break-inside:avoid;}
-  .page:last-child{page-break-after:auto;break-after:auto;}
+  .page{box-shadow:none;margin:0;overflow:hidden;}
   #edit-toolbar{display:none!important;}
 }
 </style>
