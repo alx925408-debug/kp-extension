@@ -311,7 +311,8 @@ async function scrapeProductDetails(items) {
           ...item,
           images:      resp.scraped.images      || (item.image ? [item.image] : []),
           description: (resp.scraped.description || '').slice(0, 500),
-          specs:       resp.scraped.specs        || []
+          specs:       resp.scraped.specs        || [],
+          video_url:   resp.scraped.video_url    || null
         };
       }
     } catch { tick(); }

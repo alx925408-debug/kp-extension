@@ -190,7 +190,7 @@ function descTrim(text, max) {
 }
 
 // ─── Расширенные страницы товаров ────────────────────────────────
-function buildExtendedPages(data) {
+function buildExtendedPages(data, qrMap) {
   const items = data.items || [];
   const stack = document.querySelector('.stack');
   const tplHead = document.getElementById('tpl-head');
@@ -220,6 +220,13 @@ function buildExtendedPages(data) {
       </div>
     `).join('');
 
+    const qrPageSrc  = item.url       ? (qrMap.get(item.url)       || qrUrl(item.url))       : '';
+    const qrVideoSrc  = item.video_url ? (qrMap.get(item.video_url) || qrUrl(item.video_url)) : '';
+    const qrBarHtml = (qrPageSrc || qrVideoSrc) ? `
+      <div class="ext-qr-bar">
+        ${qrPageSrc  ? `<div class="ext-qr-item"><img class="ext-qr-img" src="${qrPageSrc}"  alt="QR"><div class="ext-qr-label"><b>Страница товара</b>Отсканируйте для перехода</div></div>` : ''}
+        ${qrVideoSrc ? `<div class="ext-qr-item"><img class="ext-qr-img" src="${qrVideoSrc}" alt="QR"><div class="ext-qr-label"><b>Видео о товаре</b>Отсканируйте для просмотра</div></div>` : ''}
+      </div>` : '';
     const descText = descTrim(item.description || '', 400);
 
     const body = document.createElement('div');
@@ -237,6 +244,7 @@ function buildExtendedPages(data) {
           <div class="ext-specs">${specsHtml || ''}</div>
         </div>
       </div>
+      ${qrBarHtml}
     `;
 
     page.appendChild(body);
@@ -320,7 +328,15 @@ async function main() {
   fillCover(data);
   const qrMap = await fetchQRCodes(data.items || []);
   buildProductPages(data, qrMap);
-  if (data.extended) buildExtendedPages(data);
+  if (data.extended) {
+    const extQrUrls = [];
+    (data.items || []).forEach(item => {
+      if (item.url)       extQrUrls.push(item.url);
+      if (item.video_url) extQrUrls.push(item.video_url);
+    });
+    const extQrMap = await fetchQRCodes(extQrUrls.map(u => ({ url: u })));
+    buildExtendedPages(data, extQrMap);
+  }
 
   await document.fonts.ready;
   await waitForImages();
