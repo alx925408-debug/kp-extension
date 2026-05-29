@@ -284,44 +284,49 @@ if ($('btn-generate-pricelist')) $('btn-generate-pricelist').addEventListener('c
 
 // ─── Расширенный прайс-лист: скрапинг деталей товаров ────────────
 async function scrapeProductDetails(items) {
-  const withUrl = items.filter(i => i.url);
-  const total = withUrl.length;
+  const total = items.filter(i => i.url).length;
   let done = 0;
 
-  const detailMap = new Map();
-
-  for (const item of withUrl) {
-    try {
-      const resp = await new Promise(resolve => {
-        chrome.runtime.sendMessage({ type: 'SCRAPE_PRODUCT_PAGE', url: item.url }, r => {
-          resolve(chrome.runtime.lastError ? null : r);
-        });
-      });
-      if (resp?.ok && resp.scraped) {
-        detailMap.set(item.url, {
-          images:      resp.scraped.images || [],
-          description: (resp.scraped.description || '').slice(0, 300),
-          specs:       resp.scraped.specs   || []
-        });
-      }
-    } catch { /* пропускаем */ }
-
+  function tick() {
     done++;
-    const pct = Math.round(done / total * 100);
+    const pct = total > 0 ? Math.round(done / total * 100) : 100;
     const barEl = $('scraping-bar');
     const txtEl = $('scraping-text');
     if (barEl) barEl.style.width = pct + '%';
     if (txtEl) txtEl.textContent = `Загружаю данные товаров: ${done} / ${total}`;
   }
 
-  return items.map(item => ({
-    ...item,
-    ...(detailMap.get(item.url) || {
-      images:      item.image ? [item.image] : [],
-      description: '',
-      specs:       []
-    })
-  }));
+  async function scrapeOne(item) {
+    if (!item.url) return { ...item, images: item.image ? [item.image] : [], description: '', specs: [] };
+    try {
+      const resp = await new Promise(resolve => {
+        chrome.runtime.sendMessage({ type: 'SCRAPE_PRODUCT_PAGE', url: item.url }, r => {
+          void chrome.runtime.lastError;
+          resolve(r);
+        });
+      });
+      tick();
+      if (resp?.ok && resp.scraped) {
+        return {
+          ...item,
+          images:      resp.scraped.images      || (item.image ? [item.image] : []),
+          description: (resp.scraped.description || '').slice(0, 300),
+          specs:       resp.scraped.specs        || []
+        };
+      }
+    } catch { tick(); }
+    return { ...item, images: item.image ? [item.image] : [], description: '', specs: [] };
+  }
+
+  // Параллельно по 3 товара
+  const BATCH = 3;
+  const result = new Array(items.length);
+  for (let i = 0; i < items.length; i += BATCH) {
+    const slice = items.slice(i, i + BATCH);
+    const res   = await Promise.all(slice.map(scrapeOne));
+    res.forEach((r, j) => { result[i + j] = r; });
+  }
+  return result;
 }
 
 async function buildPricelistPayload(extended) {
@@ -360,23 +365,25 @@ async function buildPricelistPayload(extended) {
 
 if ($('btn-generate-pricelist-extended')) {
   $('btn-generate-pricelist-extended').addEventListener('click', async () => {
-    const base = await buildPricelistPayload(true);
-    if (!base) return;
+    try {
+      const base = await buildPricelistPayload(true);
+      if (!base) return;
 
-    showState('scraping');
+      showState('scraping');
 
-    const itemsWithDetails = await scrapeProductDetails(base.items);
-    base.items = itemsWithDetails;
+      const itemsWithDetails = await scrapeProductDetails(base.items);
+      base.items = itemsWithDetails;
 
-    showState('generating');
+      showState('generating');
 
-    chrome.runtime.sendMessage({ type: 'GENERATE_PRICELIST', ...base }, response => {
-      if (chrome.runtime.lastError || response?.error) {
-        showError(response?.error || chrome.runtime.lastError?.message);
-        return;
-      }
-      setTimeout(() => window.close(), 3000);
-    });
+      chrome.runtime.sendMessage({ type: 'GENERATE_PRICELIST', ...base }, response => {
+        const err = chrome.runtime.lastError?.message || response?.error;
+        if (err) { showError(err); return; }
+        setTimeout(() => window.close(), 3000);
+      });
+    } catch (e) {
+      showError('Ошибка расширенного прайс-листа: ' + e.message);
+    }
   });
 }
 
