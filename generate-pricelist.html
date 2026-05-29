@@ -150,8 +150,10 @@ hr.rule{height:1px;background:var(--line);border:0;margin:0;}
 @media print{
   html,body{background:#fff;}
   .stack{display:block;gap:0;padding:0;}
-  .page{box-shadow:none;margin:0;break-after:page;}
-  .page:last-child{break-after:auto;}
+  .page{box-shadow:none;margin:0;overflow:hidden;
+    page-break-after:always;break-after:page;
+    page-break-inside:avoid;break-inside:avoid;}
+  .page:last-child{page-break-after:auto;break-after:auto;}
   #edit-toolbar{display:none!important;}
 }
 </style>
