@@ -23,13 +23,15 @@ chrome.runtime.onInstalled.addListener(({ reason }) => {
   });
 });
 
-chrome.action.onClicked.addListener(async (tab) => {
-  await chrome.sidePanel.setOptions({
-    tabId: tab.id,
-    path: 'sidepanel.html',
-    enabled: true
-  });
-  chrome.sidePanel.open({ tabId: tab.id });
+chrome.action.onClicked.addListener((tab) => {
+  // Нельзя использовать await перед open() — теряется контекст пользовательского жеста
+  chrome.sidePanel.setOptions(
+    { tabId: tab.id, path: 'sidepanel.html', enabled: true },
+    () => {
+      if (chrome.runtime.lastError) return;
+      chrome.sidePanel.open({ tabId: tab.id });
+    }
+  );
 });
 
 // Отключить панель при переходе на новую страницу в той же вкладке
