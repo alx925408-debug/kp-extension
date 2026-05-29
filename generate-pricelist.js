@@ -213,6 +213,23 @@ async function compressImages(selector, maxPx, quality) {
   }
 }
 
+// ─── Скрыть изображения, не помещающиеся в контейнер ────────────
+function hideOverflowingImages() {
+  document.querySelectorAll('.ext-left').forEach(col => {
+    const layout = col.closest('.ext-layout');
+    if (!layout) return;
+    const limitBottom = layout.getBoundingClientRect().bottom;
+    let overflow = false;
+    col.querySelectorAll('.ext-img-slot').forEach(slot => {
+      if (overflow) { slot.style.display = 'none'; return; }
+      if (slot.getBoundingClientRect().bottom > limitBottom) {
+        slot.style.display = 'none';
+        overflow = true;
+      }
+    });
+  });
+}
+
 // ─── Обрезать описание на границе предложения ─────────────────────
 function descTrim(text, max) {
   if (!text || text.length <= max) return text;
@@ -385,10 +402,12 @@ async function main() {
   await waitForImages();
 
   // Сжать изображения перед PDF (основной способ уменьшить вес файла)
-  // Слоты товаров на расширенных страницах: 36mm × 150dpi ≈ 213px → max 500px
-  // Миниатюры в таблице прайса: 28mm × 150dpi ≈ 160px → max 200px
   await compressImages('.ext-img-slot img', 500, 0.65);
   await compressImages('.pl-img',           200, 0.70);
+
+  // Ждём один кадр чтобы layout пересчитался после смены src
+  await new Promise(r => requestAnimationFrame(r));
+  hideOverflowingImages();
 
   await new Promise(r => setTimeout(r, 800));
 
