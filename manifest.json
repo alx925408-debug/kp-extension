@@ -18,18 +18,22 @@
     "debugger",
     "downloads",
     "tabs",
-    "nativeMessaging"
+    "nativeMessaging",
+    "sidePanel"
   ],
   "host_permissions": ["<all_urls>"],
 
   "action": {
-    "default_popup": "popup.html",
     "default_title": "КП Генератор",
     "default_icon": {
       "16":  "icons/icon16.png",
       "48":  "icons/icon48.png",
       "128": "icons/icon128.png"
     }
+  },
+
+  "side_panel": {
+    "default_path": "sidepanel.html"
   },
 
   "options_page": "options.html",
@@ -41,6 +45,7 @@
   "web_accessible_resources": [{
     "resources": [
       "generate.html",
+      "generate-pricelist.html",
       "icons/logo_arbq_icon.png"
     ],
     "matches": ["<all_urls>"]

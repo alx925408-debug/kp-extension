@@ -190,8 +190,9 @@ body.editing-mode [contenteditable="true"]:focus{
 @page{size:A4;margin:0;}
 @media print{
   html,body{background:#fff;}
-  .stack{gap:0;padding:0;}
-  .page{box-shadow:none;margin:0;}
+  .stack{display:block;gap:0;padding:0;}
+  .page{box-shadow:none;margin:0;break-after:page;}
+  .page:last-child{break-after:auto;}
   #edit-toolbar{display:none!important;}
 }
 </style>
@@ -387,10 +388,10 @@ body.editing-mode [contenteditable="true"]:focus{
         </div>
         <div class="price-card invert">
           <div class="lbl-k">Условия поставки</div>
-          <div class="city" style="font-size:10pt;margin-top:2mm;line-height:1.4;opacity:.85;">
-            Доставка по России транспортными компаниями.<br>Срок поставки уточняется менеджером.
+          <div class="city" id="p5-delivery-terms" style="font-size:10pt;margin-top:2mm;line-height:1.4;opacity:.85;">
+            Оборудование полностью проверено и готово к эксплуатации
           </div>
-          <div class="amount" style="font-size:14pt;margin-top:4mm;"><span id="p5-price-note">Уточнить у менеджера</span></div>
+          <div class="amount" id="p5-payment-form" style="font-size:10pt;margin-top:4mm;opacity:.6;font-weight:600;"></div>
           <span class="price-watermark" aria-hidden="true">ДС</span>
         </div>
       </div>
@@ -398,7 +399,7 @@ body.editing-mode [contenteditable="true"]:focus{
       <div class="price-vat">
         <div class="lbl-k">Итоговая стоимость</div>
         <div class="row">
-          <span class="k">Стоимость товара (включая НДС 22%)</span>
+          <span class="k" id="p5-price-label">Стоимость товара (включая НДС 22%)</span>
           <span class="v"><span id="p5-price-2">—</span> ₽</span>
         </div>
         <!-- Доп. товары, услуги и доставка вставляются JS -->
@@ -407,8 +408,8 @@ body.editing-mode [contenteditable="true"]:focus{
           <span class="k">Итого к оплате</span>
           <span class="v"><span id="p5-total">—</span> ₽</span>
         </div>
-        <div class="row sub">
-          <span class="k">в т.ч. НДС 22%</span>
+        <div class="row sub" id="p5-vat-row">
+          <span class="k" id="p5-vat-label">в т.ч. НДС 22%</span>
           <span class="v" id="p5-vat">—</span>
         </div>
       </div>

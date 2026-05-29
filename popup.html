@@ -162,10 +162,19 @@
       <input type="text" id="client-name" placeholder="ООО Аврора, Иванов А.А.">
     </div>
 
-    <div class="field" id="price-field">
-      <label>Цена товара (₽)</label>
-      <input type="number" id="price-input" placeholder="Например: 1500000" min="0">
-      <div class="price-hint">Цена не найдена на странице — введите вручную</div>
+    <div class="field">
+      <label>Форма оплаты</label>
+      <select id="payment-form">
+        <option value="nds22">Безналичный расчет НДС 22%</option>
+        <option value="cash">Наличный расчет</option>
+        <option value="usn">Безналичный расчет (УСН)</option>
+        <option value="nds5">Безналичный расчет НДС 5%</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Цена оборудования (₽) <span style="font-weight:400;text-transform:none;color:#aaa">(необязательно)</span></label>
+      <input type="number" id="price-input" placeholder="Если пусто — берётся с сайта" min="0">
     </div>
 
     <div class="field">
@@ -196,6 +205,13 @@
           <div class="extras-label">Доставка</div>
           <input type="number" id="delivery-price" placeholder="Стоимость доставки (₽)" min="0"
             style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:5px;font-size:12px;outline:none;">
+        </div>
+
+        <div class="extras-section">
+          <div class="extras-label">Условия поставки</div>
+          <textarea id="delivery-terms"
+            style="width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:5px;font-size:12px;font-family:inherit;resize:vertical;outline:none;min-height:54px;line-height:1.5;color:#1a1a1a;"
+            placeholder="Оборудование полностью проверено и готово к эксплуатации"></textarea>
         </div>
 
         <div class="extras-section">

@@ -62,7 +62,7 @@
       });
     }
 
-    return result.slice(0, 5);
+    return result;
   }
 
   function getDescription() {
@@ -176,6 +176,19 @@
       ?.textContent?.trim() || '').slice(0, 800);
   }
 
+  const ogType = document.querySelector('meta[property="og:type"]')?.content?.toLowerCase() || '';
+  const isProductPage =
+    ogType === 'product' ||
+    !!document.querySelector(
+      '.product-item-detail-slider, .product-item-detail-properties-tab-item, ' +
+      '.product-item-detail-outer, .product-item-detail-price-current'
+    );
+
+  const isCatalogPage = !isProductPage && (
+    document.querySelectorAll('.product-card, .catalog-section-item, .catalog-item').length >= 2 ||
+    !!document.querySelector('.catalog-section, .bx-catalog, .catalog-list')
+  );
+
   return {
     title: h1,
     price,
@@ -184,6 +197,7 @@
     specs: getSpecsStructured(),
     lang,
     url: location.href,
-    video_url
+    video_url,
+    pageType: isProductPage ? 'product' : isCatalogPage ? 'catalog' : 'product'
   };
 })();

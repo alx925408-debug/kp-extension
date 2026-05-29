@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>КП Генератор</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{height:100%;}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    font-size:14px;background:#fff;color:#1a1a1a;
+    min-height:100%;display:flex;flex-direction:column;
+  }
+
+  .header{
+    background:#e31e24;color:#fff;padding:13px 16px;
+    display:flex;align-items:center;justify-content:space-between;
+    flex-shrink:0;
+  }
+  .header .title{font-weight:700;font-size:15px;letter-spacing:.01em;}
+  .header a{color:rgba(255,255,255,.75);font-size:12px;text-decoration:none;}
+  .header a:hover{color:#fff;}
+
+  .body{padding:16px;flex:1;}
+
+  .state{display:none;}
+  .state.active{display:block;}
+
+  #state-loading{text-align:center;padding:32px 0;}
+  .spinner{width:36px;height:36px;border:3px solid #eee;border-top-color:#e31e24;border-radius:50%;animation:spin .7s linear infinite;margin:0 auto 12px;}
+  @keyframes spin{to{transform:rotate(360deg);}}
+  .loading-text{color:#666;font-size:13px;}
+
+  #state-error{padding:16px 0;}
+  .error-msg{background:#fff2f2;border:1px solid #ffd0d0;border-radius:8px;padding:12px 14px;color:#c0392b;font-size:13px;line-height:1.5;}
+  .btn-retry{margin-top:10px;width:100%;padding:10px;background:#e31e24;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;}
+
+  #state-nopage{padding:24px 0;text-align:center;color:#888;font-size:13px;line-height:1.7;}
+  #state-nopage a{display:inline-block;margin-top:8px;color:#e31e24;text-decoration:none;font-size:12px;}
+
+  .product-preview{background:#f8f8f8;border-radius:8px;padding:12px 14px;margin-bottom:16px;border-left:3px solid #e31e24;}
+  .product-preview .label{font-size:10px;color:#888;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;}
+  .product-preview .name{font-weight:700;font-size:14px;line-height:1.3;color:#1a1a1a;}
+
+  .field{margin-bottom:13px;}
+  .field label{display:block;font-size:11px;font-weight:600;color:#555;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;}
+  .field select,.field input{width:100%;padding:9px 11px;border:1px solid #ddd;border-radius:7px;font-size:14px;color:#1a1a1a;background:#fff;outline:none;transition:border-color .2s;}
+  .field select:focus,.field input:focus{border-color:#e31e24;}
+
+  /* ─── Секция "Дополнительно" ─── */
+  details.extras{margin-bottom:13px;border:1px solid #eee;border-radius:7px;overflow:hidden;}
+  details.extras summary{
+    padding:9px 13px;cursor:pointer;font-size:11px;font-weight:600;color:#555;
+    text-transform:uppercase;letter-spacing:.05em;user-select:none;list-style:none;
+    display:flex;justify-content:space-between;align-items:center;
+  }
+  details.extras summary::after{content:"▸";font-size:10px;color:#bbb;transition:transform .2s;}
+  details.extras[open] summary::after{transform:rotate(90deg);}
+  details.extras .extras-body{padding:12px 13px 13px;border-top:1px solid #eee;}
+
+  .extras-section{margin-bottom:13px;}
+  .extras-section:last-child{margin-bottom:0;}
+  .extras-label{font-size:10px;font-weight:700;color:#888;text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;}
+
+  .extra-row{display:flex;gap:6px;margin-bottom:6px;align-items:center;}
+  .extra-row .en{flex:1;padding:7px 9px;border:1px solid #ddd;border-radius:6px;font-size:13px;color:#1a1a1a;outline:none;}
+  .extra-row .ep{width:100px;padding:7px 9px;border:1px solid #ddd;border-radius:6px;font-size:13px;color:#1a1a1a;outline:none;}
+  .extra-row .en:focus,.extra-row .ep:focus{border-color:#e31e24;}
+  .btn-del{background:none;border:none;color:#ccc;cursor:pointer;font-size:17px;padding:0 2px;line-height:1;flex-shrink:0;}
+  .btn-del:hover{color:#e31e24;}
+  .btn-add-row{background:none;border:1px dashed #ddd;border-radius:6px;color:#888;cursor:pointer;font-size:12px;padding:6px 10px;width:100%;text-align:center;margin-top:2px;}
+  .btn-add-row:hover{border-color:#e31e24;color:#e31e24;}
+
+  .two-col{display:flex;gap:8px;}
+  .two-col input{flex:1;padding:7px 9px;border:1px solid #ddd;border-radius:6px;font-size:13px;color:#1a1a1a;outline:none;}
+  .two-col input:focus{border-color:#e31e24;}
+  .two-col-hint{font-size:11px;color:#aaa;margin-top:3px;display:flex;gap:8px;}
+  .two-col-hint span{flex:1;text-align:center;}
+
+  .btn-generate{
+    width:100%;padding:13px;margin-top:4px;
+    background:#e31e24;color:#fff;border:none;border-radius:8px;
+    font-size:15px;font-weight:700;cursor:pointer;transition:background .2s;letter-spacing:.01em;
+  }
+  .btn-generate:hover{background:#c01920;}
+  .btn-generate:disabled{background:#ccc;cursor:not-allowed;}
+
+  #state-generating{text-align:center;padding:24px 0;}
+  .gen-steps{text-align:left;margin-top:16px;}
+  .step{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:13px;color:#888;}
+  .step.done{color:#27ae60;}
+  .step.active{color:#e31e24;font-weight:600;}
+  .step .dot{width:9px;height:9px;border-radius:50%;background:#ddd;flex-shrink:0;}
+  .step.done .dot{background:#27ae60;}
+  .step.active .dot{background:#e31e24;animation:pulse 1s infinite;}
+  @keyframes pulse{0%,100%{opacity:1;}50%{opacity:.4;}}
+
+  .footer{
+    border-top:1px solid #eee;padding:10px 16px;
+    display:flex;justify-content:space-between;align-items:center;
+    position:sticky;bottom:0;background:#fff;flex-shrink:0;
+  }
+  .footer a{font-size:12px;color:#888;text-decoration:none;}
+  .footer a:hover{color:#e31e24;}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <span class="title">КП Генератор</span>
+  <a href="#" id="open-options">⚙ Настройки</a>
+</div>
+
+<div class="body">
+
+  <!-- Загрузка -->
+  <div id="state-loading" class="state active">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loading-text">Загружаю данные товара…</div>
+  </div>
+
+  <!-- Ошибка -->
+  <div id="state-error" class="state">
+    <div class="error-msg" id="error-text">Произошла ошибка</div>
+    <button class="btn-retry" id="btn-retry">Попробовать снова</button>
+  </div>
+
+  <!-- Не страница товара -->
+  <div id="state-nopage" class="state">
+    Откройте страницу товара<br>и нажмите на иконку расширения
+    <br><a href="#" id="open-options-2">⚙ Настройки расширения</a>
+  </div>
+
+  <!-- Форма генерации -->
+  <div id="state-form" class="state">
+    <div class="product-preview">
+      <div class="label">Товар</div>
+      <div class="name" id="product-name-preview">—</div>
+    </div>
+
+    <!-- Редактирование скрапленных данных -->
+    <details class="extras" id="edit-data-section">
+      <summary>✎ Исправить данные товара</summary>
+      <div class="extras-body">
+        <div class="extras-section">
+          <div class="extras-label">Название товара</div>
+          <input type="text" id="edit-product-name"
+            style="width:100%;padding:7px 9px;border:1px solid #ddd;border-radius:6px;font-size:13px;color:#1a1a1a;outline:none;"
+            placeholder="Название товара">
+        </div>
+        <div class="extras-section">
+          <div class="extras-label">Характеристики <span style="font-weight:400;color:#aaa;text-transform:none">ключ: значение</span></div>
+          <textarea id="edit-specs"
+            style="width:100%;padding:7px 9px;border:1px solid #ddd;border-radius:6px;font-size:12px;font-family:monospace;resize:vertical;outline:none;min-height:100px;line-height:1.5;color:#1a1a1a;"
+            placeholder="= Группа =&#10;Мощность: 30 кВт&#10;Вес: 500 кг"></textarea>
+          <div style="font-size:11px;color:#aaa;margin-top:3px;">Группу начните с «= Название =»</div>
+        </div>
+      </div>
+    </details>
+
+    <!-- КП для (компания) -->
+    <div class="field">
+      <label>КП для <span style="font-weight:400;text-transform:none;color:#aaa">(необязательно)</span></label>
+      <input type="text" id="client-name" placeholder="ООО Аврора, Иванов А.А.">
+    </div>
+
+    <div class="field">
+      <label>Форма оплаты</label>
+      <select id="payment-form">
+        <option value="nds22">Безналичный расчет НДС 22%</option>
+        <option value="cash">Наличный расчет</option>
+        <option value="usn">Безналичный расчет (УСН)</option>
+        <option value="nds5">Безналичный расчет НДС 5%</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Цена оборудования (₽) <span style="font-weight:400;text-transform:none;color:#aaa">(необязательно)</span></label>
+      <input type="number" id="price-input" placeholder="Если пусто — берётся с сайта" min="0">
+    </div>
+
+    <div class="field">
+      <label>Менеджер</label>
+      <select id="manager-select">
+        <option value="">— выберите менеджера —</option>
+      </select>
+    </div>
+
+    <!-- Дополнительные позиции -->
+    <details class="extras" id="extras-section">
+      <summary>Дополнительные позиции</summary>
+      <div class="extras-body">
+
+        <div class="extras-section">
+          <div class="extras-label">Доп. товары</div>
+          <div id="extra-goods-list"></div>
+          <button class="btn-add-row" id="btn-add-good">+ Добавить товар</button>
+        </div>
+
+        <div class="extras-section">
+          <div class="extras-label">Доп. услуги</div>
+          <div id="extra-services-list"></div>
+          <button class="btn-add-row" id="btn-add-service">+ Добавить услугу</button>
+        </div>
+
+        <div class="extras-section">
+          <div class="extras-label">Доставка</div>
+          <input type="number" id="delivery-price" placeholder="Стоимость доставки (₽)" min="0"
+            style="width:100%;padding:7px 9px;border:1px solid #ddd;border-radius:6px;font-size:13px;outline:none;">
+        </div>
+
+        <div class="extras-section">
+          <div class="extras-label">Условия поставки</div>
+          <textarea id="delivery-terms"
+            style="width:100%;padding:7px 9px;border:1px solid #ddd;border-radius:6px;font-size:13px;font-family:inherit;resize:vertical;outline:none;min-height:60px;line-height:1.5;color:#1a1a1a;"
+            placeholder="Оборудование полностью проверено и готово к эксплуатации"></textarea>
+        </div>
+
+        <div class="extras-section">
+          <div class="extras-label">Срок гарантии</div>
+          <div class="two-col">
+            <input type="number" id="warranty-months" value="12" min="1" max="120">
+            <input type="number" id="warranty-hours"  value="1000" min="0">
+          </div>
+          <div class="two-col-hint"><span>месяцев</span><span>моточасов</span></div>
+        </div>
+
+      </div>
+    </details>
+
+    <button class="btn-generate" id="btn-generate" disabled>
+      Создать КП
+    </button>
+  </div>
+
+  <!-- Каталог: форма прайс-листа -->
+  <div id="state-catalog" class="state">
+    <div class="product-preview">
+      <div class="label">Прайс-лист</div>
+      <div class="name" id="catalog-title">Загрузка каталога…</div>
+    </div>
+
+    <!-- Прогресс-бар пока грузятся страницы -->
+    <div id="catalog-progress" style="margin-bottom:13px;display:none;">
+      <div style="font-size:11px;color:#888;margin-bottom:5px;" id="catalog-progress-text">Загружаю страницы…</div>
+      <div style="height:4px;background:#eee;border-radius:2px;overflow:hidden;">
+        <div id="catalog-progress-bar" style="height:100%;background:#e31e24;width:10%;transition:width .3s;"></div>
+      </div>
+    </div>
+
+    <!-- Список товаров (появляется после загрузки) -->
+    <div id="cat-items-section" style="display:none;margin-bottom:13px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <div class="extras-label">Товары: <span id="cat-selected-count" style="color:#e31e24;font-weight:700;"></span></div>
+        <button id="cat-toggle-all" style="background:none;border:none;color:#888;font-size:12px;cursor:pointer;padding:0 2px;text-decoration:underline;">Снять все</button>
+      </div>
+      <div id="cat-items-list" style="max-height:220px;overflow-y:auto;border:1px solid #eee;border-radius:6px;"></div>
+    </div>
+
+    <div class="field">
+      <label>КП для <span style="font-weight:400;text-transform:none;color:#aaa">(необязательно)</span></label>
+      <input type="text" id="cat-client-name" placeholder="ООО Аврора, Иванов А.А.">
+    </div>
+
+    <div class="field">
+      <label>Форма оплаты</label>
+      <select id="cat-payment-form">
+        <option value="nds22">Безналичный расчет НДС 22%</option>
+        <option value="cash">Наличный расчет</option>
+        <option value="usn">Безналичный расчет (УСН)</option>
+        <option value="nds5">Безналичный расчет НДС 5%</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Сортировка</label>
+      <select id="cat-sort">
+        <option value="none">Без сортировки</option>
+        <option value="price-asc">По цене ↓ (дешевле)</option>
+        <option value="price-desc">По цене ↑ (дороже)</option>
+        <option value="name-asc">По названию А-Я</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Менеджер</label>
+      <select id="cat-manager-select">
+        <option value="">— выберите менеджера —</option>
+      </select>
+    </div>
+
+    <button class="btn-generate" id="btn-generate-pricelist" disabled>
+      Создать прайс-лист
+    </button>
+  </div>
+
+  <!-- Идёт генерация -->
+  <div id="state-generating" class="state">
+    <div class="spinner"></div>
+    <div class="gen-steps">
+      <div class="step" id="step-1"><div class="dot"></div>AI анализирует товар…</div>
+      <div class="step" id="step-2"><div class="dot"></div>Заполняю шаблон КП</div>
+      <div class="step" id="step-3"><div class="dot"></div>Генерирую DOCX</div>
+      <div class="step" id="step-4"><div class="dot"></div>Генерирую PDF</div>
+      <div class="step" id="step-5"><div class="dot"></div>Сохраняю файлы</div>
+    </div>
+    <button class="btn-retry" id="btn-cancel" style="margin-top:16px;background:#aaa;font-size:13px;padding:8px;">Отмена</button>
+  </div>
+
+</div>
+
+<div class="footer">
+  <a href="#" id="open-options-3">Настройки</a>
+  <span style="color:#ccc;font-size:12px;">ARBQ.RU</span>
+</div>
+
+<script src="popup.js"></script>
+</body>
+</html>

@@ -316,7 +316,24 @@ function buildDocumentXml(data, imgMap) {
   ].join(' ');
 
   const price = data.price;
-  const vat   = price ? Math.round(price * 22 / 122) : null;
+  const pf    = data.payment_form || 'nds22';
+  const pfRowLabels = {
+    cash:  'Стоимость товара (Наличный расчет)',
+    usn:   'Стоимость товара (Безналичный расчет, УСН)',
+    nds5:  'Стоимость товара (включая НДС 5%)',
+    nds22: 'Стоимость товара (включая НДС 22%)'
+  };
+  const pfNames = {
+    cash:  'Наличный расчет',
+    usn:   'Безналичный расчет (УСН)',
+    nds5:  'Безналичный расчет НДС 5%',
+    nds22: 'Безналичный расчет НДС 22%'
+  };
+  const priceRowLabel = pfRowLabels[pf] || pfRowLabels.nds22;
+  const pfName = pfNames[pf] || pfNames.nds22;
+  const vatRate = pf === 'nds5' ? 5 : pf === 'nds22' ? 22 : 0;
+  const vat = (price && vatRate) ? Math.round(price * vatRate / (100 + vatRate)) : null;
+  const deliveryTermsText = data.delivery_terms || 'Оборудование полностью проверено и готово к эксплуатации';
 
   // — Главное фото —
   const mainUrl  = (data.images || [])[0];
@@ -374,11 +391,14 @@ function buildDocumentXml(data, imgMap) {
     ...(deliveryPrice > 0 ? [prRow('Доставка', fmt(deliveryPrice) + ' ₽')] : [])
   ];
 
+  const vatRows = vat
+    ? [prRow(`в т.ч. НДС ${vatRate}%`, fmt(vat) + ' ₽')]
+    : [];
   const priceTable = tbl([
     priceHdr,
-    prRow('Стоимость товара (включая НДС 22%)', price ? fmt(price) + ' ₽' : 'По запросу'),
+    prRow(priceRowLabel, price ? fmt(price) + ' ₽' : 'По запросу'),
     ...extraRows,
-    prRow('в т.ч. НДС 22%', vat ? fmt(vat) + ' ₽' : '—'),
+    ...vatRows,
     prRow('ИТОГО к оплате', totalPrice ? fmt(totalPrice) + ' ₽' : 'По запросу', true)
   ], { w: 9350, cols: [6560, 2790] });
 
@@ -433,7 +453,8 @@ ${para('РАСЧЁТ СТОИМОСТИ', { bold: true, sz: 36, color: 'E31E24',
 ${para(data.product_name || '', { bold: true, sz: 24, color: '15171a', spaceAfter: 160 })}
 ${priceTable}
 ${para('', { spaceAfter: 80 })}
-${para('Доставка рассчитывается дополнительно в зависимости от региона.', { sz: 20, color: '7a8088', spaceAfter: 200 })}
+${para('Условия поставки: ' + deliveryTermsText, { sz: 20, color: '7a8088', spaceAfter: 80 })}
+${para('Форма оплаты: ' + pfName, { sz: 20, color: '7a8088', spaceAfter: 200 })}
 ${rule()}
 ${para('', { spaceAfter: 80 })}
 ${para('ГАРАНТИЯ И СЕРВИС', { bold: true, sz: 28, color: '15171a', spaceAfter: 80 })}
@@ -549,6 +570,104 @@ function buildHeaderRels(hasLogo) {
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   ${rel}
 </Relationships>`;
+}
+
+// ─── Генерация DOCX прайс-листа ──────────────────────────────────
+async function generatePricelistDocx(data) {
+  const enc = new TextEncoder();
+  const items = data.items || [];
+
+  const pfNames = {
+    cash:  'Наличный расчет',
+    usn:   'Безналичный расчет (УСН)',
+    nds5:  'Безналичный расчет НДС 5%',
+    nds22: 'Безналичный расчет НДС 22%'
+  };
+  const pfName = pfNames[data.payment_form || 'nds22'] || pfNames.nds22;
+
+  function plRow(num, name, price) {
+    return `<w:tr>
+      ${tc(para(String(num), { sz: 18, spaceAfter: 0, spaceBefore: 0, align: 'center' }), { w: 800 })}
+      ${tc(para(name, { sz: 18, spaceAfter: 0, spaceBefore: 0 }), { w: 6200 })}
+      ${tc(para(price, { sz: 18, spaceAfter: 0, spaceBefore: 0, align: 'right' }), { w: 2350 })}
+    </w:tr>`;
+  }
+
+  const hdr = `<w:tr>
+    ${tc(para('№', { sz: 18, bold: true, color: 'FFFFFF', spaceAfter: 0, spaceBefore: 0, align: 'center' }), { w: 800, bgColor: 'E31E24' })}
+    ${tc(para('Наименование', { sz: 18, bold: true, color: 'FFFFFF', spaceAfter: 0, spaceBefore: 0 }), { w: 6200, bgColor: 'E31E24' })}
+    ${tc(para('Цена', { sz: 18, bold: true, color: 'FFFFFF', spaceAfter: 0, spaceBefore: 0, align: 'right' }), { w: 2350, bgColor: 'E31E24' })}
+  </w:tr>`;
+
+  const rows = items.map((item, i) =>
+    plRow(i + 1, item.title || '—', item.price ? fmt(item.price) + ' ₽' : 'По запросу')
+  );
+
+  const table = tbl([hdr, ...rows], { w: 9350, cols: [800, 6200, 2350] });
+
+  const NS = [
+    'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"',
+    'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"',
+    'xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing"',
+    'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main"',
+    'xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"'
+  ].join(' ');
+
+  const docXml = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<w:document ${NS}><w:body>
+${para('ПРАЙС-ЛИСТ ARBQ.RU', { bold: true, sz: 56, color: 'E31E24', align: 'center', spaceAfter: 80 })}
+${data.client_name ? para('для ' + data.client_name, { sz: 24, color: '7a8088', align: 'center', spaceAfter: 40 }) : ''}
+${para((data.date || '') + (data.manager_name ? ' · ' + data.manager_name : ''), { sz: 20, color: '7a8088', align: 'center', spaceAfter: 200 })}
+${table}
+${para('', { spaceAfter: 160 })}
+${para('Менеджер: ' + (data.manager_name || '') + ' · ' + (data.manager_email || ''), { sz: 18, color: '7a8088', spaceAfter: 40 })}
+${para('Форма оплаты: ' + pfName, { sz: 18, color: '7a8088', spaceAfter: 40 })}
+${para('ARBQ.RU · 8 800 600 6649 · arbq.ru', { sz: 18, color: '7a8088', spaceAfter: 40 })}
+<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="720" w:right="720" w:bottom="720" w:left="720"/></w:sectPr>
+</w:body></w:document>`;
+
+  const contentTypes = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+<Default Extension="xml" ContentType="application/xml"/>
+<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>
+<Override PartName="/word/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.styles+xml"/>
+</Types>`;
+
+  const rootRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>
+</Relationships>`;
+
+  const wordRels = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>
+</Relationships>`;
+
+  const files = [
+    { name: '[Content_Types].xml',          data: enc.encode(contentTypes) },
+    { name: '_rels/.rels',                  data: enc.encode(rootRels) },
+    { name: 'word/_rels/document.xml.rels', data: enc.encode(wordRels) },
+    { name: 'word/document.xml',            data: enc.encode(docXml) },
+    { name: 'word/styles.xml',              data: enc.encode(buildStylesXml()) }
+  ];
+
+  const zipBytes = MiniZip.build(files);
+  return new Blob([zipBytes], {
+    type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  });
+}
+
+async function downloadPricelistDocx(data) {
+  const blob = await generatePricelistDocx(data);
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const clientPart = data.client_name ? '_' + (data.client_name).replace(/[\\/:*?"<>|]/g, '_').slice(0, 40) : '';
+  const firstTitle = (data.items && data.items[0]?.title) || 'каталог';
+  a.download = `Прайс_${firstTitle.replace(/[\\/:*?"<>|]/g, '_').slice(0, 50)}${clientPart}.docx`;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
 }
 
 // ─── Основная функция генерации DOCX ─────────────────────────────

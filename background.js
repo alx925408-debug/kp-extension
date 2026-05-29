@@ -23,6 +23,22 @@ chrome.runtime.onInstalled.addListener(({ reason }) => {
   });
 });
 
+chrome.action.onClicked.addListener(async (tab) => {
+  await chrome.sidePanel.setOptions({
+    tabId: tab.id,
+    path: 'sidepanel.html',
+    enabled: true
+  });
+  chrome.sidePanel.open({ tabId: tab.id });
+});
+
+// Отключить панель при переходе на новую страницу в той же вкладке
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  if (changeInfo.status === 'loading') {
+    chrome.sidePanel.setOptions({ tabId, enabled: false }).catch(() => {});
+  }
+});
+
 // ─── Поиск доп. данных о товаре (опционально) ────────────────────
 async function fetchSearchContext(title) {
   try {
@@ -67,6 +83,7 @@ async function generateMarketingCopy(scraped) {
 - Каждое преимущество: конкретный заголовок (3-5 слов) + одно точное предложение с цифрами или фактом.
 - Не повторяй одно и то же разными словами.
 - Не используй общие фразы вроде «высокое качество» или «надёжность».
+- Не используй гарантию как преимущество.
 - ВСЕ поля — только на русском языке, без единого английского слова.
 
 Верни ТОЛЬКО JSON (без markdown, без пояснений):
@@ -164,11 +181,12 @@ async function scrapePage(tabId, tabUrl) {
 
 // ─── Генерация PDF через chrome.debugger ─────────────────────────
 async function generatePDF(tabId, filename) {
-  return new Promise((resolve, reject) => {
+  // Отсоединяем debugger на случай если предыдущая сессия не была закрыта (MV3 SW может умереть до detach)
+  await new Promise(r => chrome.debugger.detach({ tabId }, () => { void chrome.runtime.lastError; r(); }));
+
+  const base64 = await new Promise((resolve, reject) => {
     chrome.debugger.attach({ tabId }, '1.3', () => {
-      if (chrome.runtime.lastError) {
-        return reject(chrome.runtime.lastError);
-      }
+      if (chrome.runtime.lastError) return reject(new Error(chrome.runtime.lastError.message));
 
       chrome.debugger.sendCommand({ tabId }, 'Page.printToPDF', {
         landscape: false,
@@ -183,32 +201,55 @@ async function generatePDF(tabId, filename) {
         marginRight: 0,
         preferCSSPageSize: true
       }, (result) => {
-        chrome.debugger.detach({ tabId }, () => {});
+        // Сохраняем lastError ДО любых других вызовов — иначе он перекрывается
+        const printError = chrome.runtime.lastError;
+        chrome.debugger.detach({ tabId }, () => { void chrome.runtime.lastError; });
 
-        if (chrome.runtime.lastError || !result) {
-          return reject(chrome.runtime.lastError || new Error('PDF generation failed'));
-        }
-
-        // base64 → Blob URL → download
-        const binary = atob(result.data);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) {
-          bytes[i] = binary.charCodeAt(i);
-        }
-        const blob = new Blob([bytes], { type: 'application/pdf' });
-        const url = URL.createObjectURL(blob);
-
-        chrome.downloads.download({
-          url,
-          filename: filename + '.pdf',
-          saveAs: false
-        }, () => {
-          URL.revokeObjectURL(url);
-          resolve();
-        });
+        if (printError) return reject(new Error(printError.message));
+        if (!result?.data) return reject(new Error('printToPDF returned no data'));
+        resolve(result.data);
       });
     });
   });
+
+  // Загрузка через data URL — надёжнее blob URL в MV3 service worker
+  const dataUrl = 'data:application/pdf;base64,' + base64;
+  await new Promise((resolve, reject) => {
+    chrome.downloads.download({ url: dataUrl, filename: filename + '.pdf', saveAs: false }, (id) => {
+      if (chrome.runtime.lastError) return reject(new Error(chrome.runtime.lastError.message));
+      resolve(id);
+    });
+  });
+}
+
+// ─── Загрузка одной страницы каталога (вызывается из сайдбара) ───
+async function scrapeCatalogPage(url) {
+  let bgTab;
+  try {
+    bgTab = await chrome.tabs.create({ url, active: false });
+
+    await new Promise((resolve) => {
+      const listener = (tabId2, changeInfo) => {
+        if (tabId2 === bgTab.id && changeInfo.status === 'complete') {
+          chrome.tabs.onUpdated.removeListener(listener);
+          resolve();
+        }
+      };
+      chrome.tabs.onUpdated.addListener(listener);
+      setTimeout(resolve, 12000);
+    });
+
+    const results = await chrome.scripting.executeScript({
+      target: { tabId: bgTab.id },
+      files: ['content-catalog.js']
+    });
+    const pageData = results[0]?.result || { items: [], nextPageUrl: null };
+    return { items: pageData.items || [], nextPageUrl: pageData.nextPageUrl || null };
+  } finally {
+    if (bgTab) {
+      try { chrome.tabs.remove(bgTab.id); } catch (_) {}
+    }
+  }
 }
 
 // ─── Обработка сообщений ─────────────────────────────────────────
@@ -235,7 +276,37 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           sendResponse({ error: 'Не удалось прочитать страницу' });
           return;
         }
-        sendResponse({ ok: true, scraped });
+
+        if (scraped.pageType === 'catalog') {
+          const catResults = await chrome.scripting.executeScript({
+            target: { tabId: msg.tabId },
+            files: ['content-catalog.js']
+          });
+          const catalogData = catResults[0]?.result || { items: [], nextPageUrl: null };
+
+          sendResponse({
+            ok: true,
+            pageType: 'catalog',
+            items: catalogData.items,
+            nextPageUrl: catalogData.nextPageUrl || null,
+            catalogTitle: catalogData.catalogTitle || ''
+          });
+        } else {
+          sendResponse({ ok: true, scraped });
+        }
+      } catch (e) {
+        sendResponse({ error: e.message });
+      }
+    })();
+    return true;
+  }
+
+  // Сайдбар запрашивает загрузку одной страницы каталога
+  if (msg.type === 'SCRAPE_CATALOG_PAGE') {
+    (async () => {
+      try {
+        const result = await scrapeCatalogPage(msg.url);
+        sendResponse({ ok: true, ...result });
       } catch (e) {
         sendResponse({ error: e.message });
       }
@@ -267,6 +338,8 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         data.warranty_hours  = msg.warranty_hours  || 1000;
         data.extra_goods     = msg.extra_goods     || [];
         data.extra_services  = msg.extra_services  || [];
+        data.payment_form    = msg.payment_form    || 'nds22';
+        data.delivery_terms  = msg.delivery_terms  || null;
 
         const sessionKey = 'kp_' + Date.now();
         await chrome.storage.local.set({ [sessionKey]: data });
@@ -319,5 +392,32 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     chrome.tabs.remove(sender.tab.id);
     sendResponse({ ok: true });
     return;
+  }
+
+  // Генерация прайс-листа
+  if (msg.type === 'GENERATE_PRICELIST') {
+    (async () => {
+      try {
+        const data = {
+          items:          msg.items,
+          manager_name:   msg.manager_name,
+          manager_email:  msg.manager_email,
+          date:           msg.date,
+          client_name:    msg.client_name    || null,
+          payment_form:   msg.payment_form   || 'nds22',
+          catalog_title:  msg.catalog_title  || ''
+        };
+        const sessionKey = 'kp_pl_' + Date.now();
+        await chrome.storage.local.set({ [sessionKey]: data });
+        const tab = await chrome.tabs.create({
+          url: chrome.runtime.getURL('generate-pricelist.html') + '?session=' + sessionKey,
+          active: true
+        });
+        sendResponse({ ok: true, tabId: tab.id });
+      } catch (e) {
+        sendResponse({ error: e.message });
+      }
+    })();
+    return true;
   }
 });

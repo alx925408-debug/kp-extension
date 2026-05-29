@@ -72,36 +72,78 @@ function fillPage2(data) {
   html('p2-benefits', benefitsHtml);
 }
 
+const GALLERY_CONFIGS = {
+  1: { cols: '1fr',              rows: '1fr',              areas: '"a"',                                               slots: ['ga'] },
+  2: { cols: '1fr 1fr',          rows: '1fr',              areas: '"a b"',                                             slots: ['ga', 'gb'] },
+  3: { cols: 'repeat(3,1fr)',    rows: '1fr 1fr',          areas: '"a a b" "a a c"',                                   slots: ['ga', 'gb', 'gc'] },
+  4: { cols: 'repeat(2,1fr)',    rows: '1fr 1fr',          areas: '"a b" "c d"',                                       slots: ['ga', 'gb', 'gc', 'gd'] },
+  5: { cols: 'repeat(6,1fr)',    rows: 'repeat(4,1fr)',    areas: '"a a a a b b" "a a a a b b" "a a a a c c" "d d e e e e"', slots: ['ga', 'gb', 'gc', 'gd', 'ge'] }
+};
+
+function applyGalleryGrid(galleryEl, images, offset) {
+  const count = images.length;
+  if (!count) { galleryEl.innerHTML = ''; return; }
+  const cfg = GALLERY_CONFIGS[count] || GALLERY_CONFIGS[5];
+  galleryEl.style.gridTemplateColumns = cfg.cols;
+  galleryEl.style.gridTemplateRows    = cfg.rows;
+  galleryEl.style.gridTemplateAreas   = cfg.areas;
+  galleryEl.innerHTML = images.map((src, i) => `
+    <div class="g-img ${cfg.slots[i]}">
+      <img src="${src}" alt="Фото ${offset + i + 1}" crossorigin="anonymous">
+    </div>
+  `).join('');
+}
+
 function fillPage3(data) {
   set('p3-product-name', data.product_name);
-  const images = (data.images || []).slice(0, 5);
-  const count = images.length;
-
+  const allImages = data.images || [];
   const galleryEl = document.getElementById('p3-gallery');
 
-  if (!count) {
+  if (!allImages.length) {
     galleryEl.innerHTML = '';
     return;
   }
 
-  const gridConfigs = {
-    1: { cols: '1fr',              rows: '1fr',              areas: '"a"',                                               slots: ['ga'] },
-    2: { cols: '1fr 1fr',          rows: '1fr',              areas: '"a b"',                                             slots: ['ga', 'gb'] },
-    3: { cols: 'repeat(3,1fr)',    rows: '1fr 1fr',          areas: '"a a b" "a a c"',                                   slots: ['ga', 'gb', 'gc'] },
-    4: { cols: 'repeat(2,1fr)',    rows: '1fr 1fr',          areas: '"a b" "c d"',                                       slots: ['ga', 'gb', 'gc', 'gd'] },
-    5: { cols: 'repeat(6,1fr)',    rows: 'repeat(4,1fr)',    areas: '"a a a a b b" "a a a a b b" "a a a a c c" "d d e e e e"', slots: ['ga', 'gb', 'gc', 'gd', 'ge'] }
-  };
+  // Первые 5 — на страницу 3
+  applyGalleryGrid(galleryEl, allImages.slice(0, 5), 0);
 
-  const cfg = gridConfigs[count];
-  galleryEl.style.gridTemplateColumns = cfg.cols;
-  galleryEl.style.gridTemplateRows = cfg.rows;
-  galleryEl.style.gridTemplateAreas = cfg.areas;
+  // Если изображений больше 5 — все остальные на одну доп. страницу
+  const extra = allImages.slice(5);
+  if (!extra.length) return;
 
-  galleryEl.innerHTML = images.map((src, i) => `
-    <div class="g-img ${cfg.slots[i]}">
-      <img src="${src}" alt="Фото ${i + 1}" crossorigin="anonymous">
+  const cols = extra.length <= 6 ? 3 : extra.length <= 8 ? 4 : extra.length <= 9 ? 3 : extra.length <= 12 ? 4 : 5;
+  const rows = Math.ceil(extra.length / cols);
+
+  const tpl   = document.getElementById('tpl-head');
+  const page4 = document.getElementById('page-4');
+
+  const extraPage = document.createElement('section');
+  extraPage.className = 'page';
+  extraPage.appendChild(tpl.content.cloneNode(true));
+
+  const body = document.createElement('div');
+  body.className = 'body';
+  body.innerHTML = `
+    <div class="section-head">
+      <div class="small">Дополнительные изображения (продолжение)</div>
+      <div class="big">${esc(data.product_name)}</div>
+    </div>
+  `;
+
+  const extraGallery = document.createElement('div');
+  extraGallery.className = 'gallery';
+  extraGallery.style.gridTemplateAreas   = 'none';
+  extraGallery.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+  extraGallery.style.gridTemplateRows    = `repeat(${rows}, 1fr)`;
+  extraGallery.innerHTML = extra.map((src, i) => `
+    <div class="g-img">
+      <img src="${src}" alt="Фото ${6 + i}" crossorigin="anonymous">
     </div>
   `).join('');
+
+  body.appendChild(extraGallery);
+  extraPage.appendChild(body);
+  page4.before(extraPage);
 }
 
 function buildSpecsHtml(specs) {
@@ -190,6 +232,40 @@ function fillPage5(data) {
   set('p5-price',   priceStr);
   set('p5-price-2', priceStr);
 
+  // Форма оплаты
+  const pf = data.payment_form || 'nds22';
+  const pfLabels = {
+    cash:  'Наличный расчет',
+    usn:   'Безналичный расчет (УСН)',
+    nds5:  'Безналичный расчет НДС 5%',
+    nds22: 'Безналичный расчет НДС 22%'
+  };
+  const pfLabel = pfLabels[pf] || pfLabels.nds22;
+  set('p5-payment-form', pfLabel);
+
+  const priceRowLabels = {
+    cash:  'Стоимость товара (Наличный расчет)',
+    usn:   'Стоимость товара (Безналичный расчет, УСН)',
+    nds5:  'Стоимость товара (включая НДС 5%)',
+    nds22: 'Стоимость товара (включая НДС 22%)'
+  };
+  set('p5-price-label', priceRowLabels[pf] || priceRowLabels.nds22);
+
+  // НДС
+  const vatRow = document.getElementById('p5-vat-row');
+  if (data.price && (pf === 'nds5' || pf === 'nds22')) {
+    const vatRate = pf === 'nds5' ? 5 : 22;
+    set('p5-vat-label', `в т.ч. НДС ${vatRate}%`);
+    set('p5-vat', fmt(Math.round(data.price * vatRate / (100 + vatRate))) + ' ₽');
+    if (vatRow) vatRow.style.display = '';
+  } else {
+    if (vatRow) vatRow.style.display = 'none';
+  }
+
+  // Условия поставки
+  const deliveryTerms = data.delivery_terms || 'Оборудование полностью проверено и готово к эксплуатации';
+  set('p5-delivery-terms', deliveryTerms);
+
   // Доп. товары, услуги, доставка
   const extraGoods    = data.extra_goods    || [];
   const extraServices = data.extra_services || [];
@@ -202,19 +278,12 @@ function fillPage5(data) {
   ].filter(Boolean).join('');
   html('p5-extra-rows', extraRowsHtml);
 
-  // Итого = основной товар + все доп. позиции
+  // Итого
   const extraTotal = extraGoods.reduce((s, i) => s + (i.price || 0), 0)
     + extraServices.reduce((s, i) => s + (i.price || 0), 0)
     + deliveryPrice;
   const total = (data.price || 0) + extraTotal;
   set('p5-total', total ? fmt(total) : 'По запросу');
-
-  if (data.price) {
-    const vat = Math.round(data.price * 22 / 122);
-    set('p5-vat', fmt(vat) + ' ₽');
-  } else {
-    set('p5-vat', '—');
-  }
 
   set('p5-email',   data.manager_email);
   set('p5-manager', data.manager_name);
@@ -347,6 +416,7 @@ const EDITABLES = [
   '.bn-it .ttl', '.bn-it .desc',
   '#p2-product-name', '#p3-product-name', '#p4-product-name', '#p5-product-name',
   '.lede', '#p5-price', '#p5-price-2', '#p5-total', '#p5-vat',
+  '#p5-delivery-terms', '#p5-payment-form', '#p5-price-label', '#p5-vat-label',
   '.price-vat .row .v',
   '#p6-warranty-months', '#p6-warranty-hours',
   '#p1-eyebrow', '#p1-client-name', '#p1-date',

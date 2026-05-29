@@ -137,6 +137,14 @@
   // Короткий текст для Ollama — только описание, не весь текст страницы
   const descriptionText = (meta + '\n' + mainText.slice(0, 1200)).trim();
 
+  const ogType = document.querySelector('meta[property="og:type"]')?.content?.toLowerCase() || '';
+  const isDefinitelyProduct = ogType === 'product' || !!document.querySelector('[itemtype*="Product"]:not([itemtype*="ItemList"]) [itemprop="description"]');
+
+  const isCatalog = !isDefinitelyProduct && (
+    document.querySelectorAll('[itemtype*="Product"]').length >= 3 ||
+    document.querySelectorAll('[class*="catalog-item"],[class*="product-card"],[class*="product-tile"]').length >= 3
+  );
+
   return {
     title,
     price,
@@ -144,6 +152,7 @@
     description: descriptionText,
     specs: getSpecsStructured(),
     lang,
-    url: location.href
+    url: location.href,
+    pageType: isCatalog ? 'catalog' : 'product'
   };
 })();
